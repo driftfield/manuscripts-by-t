@@ -1,8 +1,6 @@
 # Manuscripts by T
 
-A growing collection of manuscripts on the governance of AI agents, organized around three problems. Training covers assistance, consent, preference feedback, checkpoint selection, and cumulative harm while an agent is being shaped. Correction covers audits, appeals, repair scheduling, allocation of limited human review, and containment after failures. Protection covers tool revocation, dependency revalidation, provenance, exposure escrow, quorum-based cutover, and recovery when an agent's effects are uncertain.
-
-Independent manuscript review is pending.
+A collection of manuscripts on the governance of AI agents, organized around three problems. Training covers assistance, consent, preference feedback, checkpoint selection, and cumulative harm while an agent is being shaped. Correction covers audits, appeals, repair scheduling, allocation of limited human review, and containment after failures. Protection covers tool revocation, dependency revalidation, provenance, exposure escrow, quorum-based cutover, and recovery when an agent's effects are uncertain.
 
 ## Training
 
