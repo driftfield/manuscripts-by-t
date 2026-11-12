@@ -1,0 +1,360 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Minimax Allocation of Limited Human Review Across Protected Groups}}
+\newtheorem{theorem}{Theorem}
+\title{Minimax Allocation of Limited Human Review Across Protected Groups}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+A team auditing an agent has a fixed number of reviews and may not
+know which user group bears the harm. We derive the best worst-group
+detection probability for a finite audit with equal review costs.
+A continuous calculation is exact because the detection curves are
+concave and their fractional allocations admit budget-preserving
+randomization. The resulting plan satisfies integer review floors
+on every draw. Independent enumeration verifies 128 two-group
+instances, including cases where randomization improves on every
+fixed allocation. We extend the result to imperfect review and
+derive the exact guarantee when miss events can be dependent.
+A bound on pairwise joint detections gives a sharp intermediate
+curve without specifying the full dependence structure.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} How should a service allocate a fixed number of
+human reviews when it does not know which group is affected?
+\paragraph{Finding.} Concave interpolation gives the exact worst-group
+detection optimum. Dependent rounding implements its allocation while
+satisfying all integer review floors and the total slot budget on every
+draw.
+\paragraph{Evidence and scope.} The result is proved and checked
+on synthetic queues with independent enumeration. It gives a way to
+reserve attention for sparse groups. The guarantee assumes disjoint
+groups, equal review costs and stated minimum harm counts.
+The imperfect-review extension also needs a lower sensitivity bound
+and a declared model for dependence between misses. Pairwise
+bounds can tighten the guarantee without assuming independence.
+
+\section{One budget and several places to look}
+A service can audit a scheduling or eligibility agent only after
+human reviewers inspect the affected cases. A group with few
+reports may be small, poorly represented, or simply difficult to
+reach. Proportional sampling can miss harm concentrated in such
+a group. A separate minimum review count can guarantee that each
+group receives attention, but equal counts do not imply equal
+chances of finding harm.
+
+Partition a fixed queue into disjoint strata $g=1,\ldots,G$ with
+$n_g$ cases. Every review costs one slot and observes a binary harm
+label. The unknown affected stratum contains at least $h_g\ge1$
+harmed cases if it is affected. Their positions are unknown, and
+the reviewer has no reliable case-level signal about them before
+inspection. There are $B$ slots and integer floors $a_g$, with
+$0\le a_g\le n_g$ and $\sum_g a_g\le B$. Allocate without replacing
+a reviewed case. The objective is to maximize the lowest probability
+of detecting at least one harm when the affected stratum is chosen
+adversarially. Additional affected strata can only help the detection
+probability of a fixed randomized allocation.
+
+For a uniform sample of $b$ cases in stratum $g$, the detection
+probability at its minimum harm count is
+\[
+f_g(b)=1-\frac{\binom{n_g-h_g}{b}}{\binom{n_g}{b}},
+\]
+where the numerator is zero if too few unharmed cases remain.
+Let $\bar f_g$ interpolate $f_g$ linearly between adjacent
+integers. The result below relies on the equal slot cost and on
+that interpolation, rather than on replacing finite sampling
+by independent draws with replacement.
+
+\section{An exact continuous allocation}
+\begin{theorem}
+The best worst-stratum detection probability over all randomized
+audit designs is
+\[
+\max_{\substack{a_g\le x_g\le n_g\\\sum_g x_g\le B}}
+       \min_g\bar f_g(x_g).
+\]
+For any maximizing vector $x$, there is a randomized design
+whose integer counts satisfy every floor and the total budget
+in every realization. Its expected count in group $g$ is $x_g$,
+and its worst-case detection probability in that group is
+$\bar f_g(x_g)$.
+\end{theorem}
+
+\begin{proof}
+First consider the no-harm sequence of observations. For every
+fixed choice of the design's random coins, this sequence determines
+which cases it would inspect up to budget, including all adaptive
+decisions on that sequence. When exactly one stratum is harmed,
+the design detects harm if and only if this hypothetical path
+intersects its harmed set. Before the first hit all observations
+match the hypothetical path. Thus adaptations based solely on
+the binary review outcome cannot improve the event of the first
+detection beyond the induced random no-hit allocation.
+
+For a given stratum, put its $h_g$ harmed cases uniformly among
+its $n_g$ cases for the upper-bound argument. With $b_g$ no-hit
+path reviews in that stratum, the detection probability averaged
+over placements is $f_g(b_g)$. The worst placement therefore
+has detection probability at most $\mathbb E f_g(b_g)$.
+Take $x_g=\mathbb E b_g$. The increments of $f_g$ are
+nonnegative and nonincreasing. In fact if $q_b=1-f_g(b)>0$,
+then the next increment is $q_bh_g/(n_g-b)$.
+The ratio of successive positive increments is
+\[
+\frac{n_g-h_g-b}{n_g-b-1}\le1
+\]
+whenever both increments are defined and the denominator is
+positive. After certainty is reached the increments vanish.
+Hence $\bar f_g$ is concave and Jensen's inequality gives
+$\mathbb E f_g(b_g)\le\bar f_g(x_g)$. The vector $x$ meets
+the continuous constraints, proving the upper bound.
+
+For the converse, write $x_g=m_g+r_g$ with $m_g$ integer
+and $0\le r_g<1$. Make consecutive half-open intervals of
+length $r_g$ and draw one uniform shift $U$ in $[0,1)$.
+Round group $g$ up when its interval contains some point
+of $U+\mathbb Z$. An interval of length less than one gets
+at most one such point, with probability exactly $r_g$.
+The total number of round-ups is at most
+$\lceil\sum_g r_g\rceil$. Since the budget is an integer,
+the rounded counts sum to at most $B$. The integer floors
+and caps are preserved. This is a dependent rounding
+construction \cite{gandhi} specialized to one shared budget.
+
+Choose uniformly within each group using its rounded count.
+Every fixed harmed set of size $h_g$ then has detection
+probability $\mathbb E f_g(b_g)=\bar f_g(x_g)$, because
+$b_g$ takes only the two integers adjacent to $x_g$.
+Larger harmed sets have at least that probability.
+\end{proof}
+
+A target probability $q$ is feasible if the sum of the smallest
+$x_g$ with $\bar f_g(x_g)\ge q$ and $x_g\ge a_g$ is at most $B$.
+This gives a scalar search. Each inverse curve is piecewise
+linear. For rational finite data, finding the breakpoint interval
+that contains the target and interpolating gives the exact
+optimum.
+
+\section{Where randomization helps}
+With one slot and two groups of ten, one harmed case in
+the affected group, and no floors, every fixed allocation
+leaves one group unchecked. Choose each group with probability
+one half. Each has detection probability $1/20$ in its worst
+placement. This is a guarantee averaged over the audit draw,
+so it does not guarantee that both groups are reviewed on that
+draw. Positive floors are the way to impose that separate
+requirement when the budget permits it.
+
+For a larger example, take 80 cases with a minimum of eight
+harms in the first stratum, 20 cases with a minimum of one in
+the second, and ten review slots. The optimal mixed design has
+expected counts approximately 3.605 and 6.395. Its worst-stratum
+detection probability is $18121/56674$, about 0.31974. The
+best fixed allocation gives 0.30. Splitting the slots equally
+gives 0.25 and proportional allocation gives 0.10. Here the
+smaller stratum receives more reviews because its stipulated
+harm density is lower.
+
+The verifier compares the continuous result against independent
+two-group enumeration of all feasible allocations and their
+line-segment mixtures. In the plane, an optimum of the smaller
+coordinate over the convex hull is attained at a vertex or on
+an edge, so that oracle is exact. All 128 optima agree.
+Randomization strictly improves the fixed allocation in 30
+cases, with a largest gap of $2/5$. An independent interval
+calculation checks budgets, floors, marginals and achieved
+detection on 128 additional three-group cases. These synthetic
+counts describe the fixed experiment design.
+
+\section{Imperfect reviews and shared misses}
+An inspection can miss a real harm. Suppose each harmed case in
+group $g$ has a latent binary mark indicating whether a review
+would detect it. The mark law is fixed with the harm placement
+before the audit's sampling coins. Clean cases never raise a hit.
+The latent marks can represent a shared blind spot in a rubric
+or independent reviewer misses. We assume a common lower bound
+$s_g\in[0,1]$ on each harmed case's marginal detection probability
+conditional on the fixed placement.
+
+\begin{theorem}
+If dependence between marks is unrestricted, replace $f_g(b)$
+in the minimax allocation theorem by $s_g f_g(b)$. If marks are
+independent, replace it by
+\[
+ f^{\mathrm{ind}}_g(b)
+ =\sum_{m=0}^{h_g}\binom{h_g}{m}
+   s_g^m(1-s_g)^{h_g-m}
+   \left[1-\frac{\binom{n_g-m}{b}}{\binom{n_g}{b}}\right].
+\]
+In either regime, interpolate the replacement curve and use the
+same budget-preserving rounding rule.
+\end{theorem}
+\begin{proof}
+With a uniform sample of size $b$, condition on which cases it
+contains. If it contains a harmed case, pick any one of them
+using a fixed order on the cases. Its mark is positive with
+probability at least $s_g$. Independence of the sampling coins
+from the mark law makes the bound valid for this conditional
+sample. Thus detection probability is at least $s_g f_g(b)$.
+For the matching upper bound, give the $h_g$ harmed cases a
+single common Bernoulli mark of mean $s_g$. Use a uniform harm
+placement as in the first theorem. The no-hit path analysis
+gives exactly $s_g f_g(b)$ after averaging over placements and
+the common mark.
+
+For independent marks, the number of detectable harmed cases
+stochastically dominates a binomial with parameters $h_g,s_g$.
+Conditional on the actual number $m$, uniform review finds a mark
+with probability $1-\binom{n_g-m}{b}/\binom{n_g}{b}$. This gives
+the displayed lower bound. For the upper bound, take exactly
+$h_g$ uniformly placed harms with independent marks of mean $s_g$.
+Conditional on their number, detectable cases are uniform
+among subsets of that size. The no-hit path then has the
+displayed detection curve. Both replacement curves are concave
+after interpolation. The first is a nonnegative multiple of
+$f_g$, and the second is a mixture of finite-population curves.
+Jensen's inequality and the original rounding proof apply.
+\end{proof}
+
+The shared-miss model caps guaranteed detection at $s_g$ even
+after reviewing the entire group. With independent marks the
+cap is $1-(1-s_g)^{h_g}$. The scalar allocation search therefore
+starts with the smallest group cap as its upper endpoint.
+In a fixture with group sizes 16 and 10, minimum harm counts
+five and three, sensitivities $1/2$ and $3/4$, and ten review
+slots, the optimal guaranteed detection is $0.4882$ under
+arbitrary dependence and $0.6744$ under independence. The
+first group receives about $7.328$ expected reviews in the
+dependence-robust design and $6.119$ in the independent design.
+
+The verifier checks 1,980 joint-law and slot-count combinations
+on one five-case queue. Explicit mark and sample enumeration
+checks 100 independent curves. In 96 seeded two-group fixtures,
+an allocation oracle confirms both optima, and independence
+strictly raises the optimum in 41. These are finite checks of
+the stated models. Estimating sensitivity and testing for common
+misses require data from the proposed review process.
+
+\subsection{What pairwise detection evidence can buy}
+Suppose each harmed case is detectable with probability at least
+$s>0$, and each pair is jointly detectable with probability at
+most $u$. These are bounds for a fixed harm placement, with the
+joint mark law chosen before sampling. Let $M$ be the number of
+positive marks among $h$ harmed cases. The bounds imply
+$\mathbb E M\ge hs$ and $\mathbb E[M(M-1)]\le h(h-1)u$.
+
+Write $F_b(m)$ for the detection probability under $b$ uniform
+reviews when exactly $m$ of $n$ cases have a positive mark. Define
+\[
+ \mu=hs,\qquad t=\min\{h,1+(h-1)u/s\}.
+\]
+Let $Z_*$ have mean $t$ and support on the two adjacent integers
+around $t$, using a point mass when $t$ is integral. For $m\ge1$ set
+\[
+ p_m=\frac{\mu}{m}\Pr(Z_*=m),\qquad p_0=1-\sum_{m=1}^h p_m.
+\]
+
+\begin{theorem}
+The marginal and pairwise bounds are jointly feasible exactly when
+$p_0\ge0$. In that case the sharp detection guarantee for every
+sample size $b$ is $\sum_m p_m F_b(m)$. The same distribution
+$(p_m)$ attains all these minima, and the resulting curve can
+replace $f_g$ in the allocation theorem.
+\end{theorem}
+\begin{proof}
+To minimize detection, it suffices to consider $\mathbb E M=\mu$.
+For a law with larger mean, independently replace all its marks
+with zero often enough to reach $\mu$. This preserves the pairwise
+caps and can only lower detection. Define $Z$ by weighting each
+positive count by its size, so
+$\Pr(Z=m)=m\Pr(M=m)/\mu$. The second-moment bound gives
+$\mathbb E Z\le t$. For any function $F$ with $F(0)=0$,
+$\mathbb E F(M)=\mu\mathbb E[F(Z)/Z]$.
+
+The sequence $F_b(m)/m$ is decreasing and discretely convex.
+To see this for $b>0$, count a hit by giving each selected marked
+case a share equal to the reciprocal of the total marks selected.
+Conditioning on inclusion of one marked case yields
+\[
+ \frac{F_b(m)}{m}=\frac bn\,\mathbb E\!\left[\frac{1}{1+K_m}\right],
+\]
+where $K_m$ counts marked cases among $b-1$ other sampled cases
+when $m-1$ of the $n-1$ remaining cases are marked. Couple the
+counts for successive $m$ by marking new cases in a fixed order
+while retaining the same random sample. The reciprocal decreases.
+For two new marks, the expected second difference equals the
+expected mixed difference from adding each mark separately, since
+interchanging their positions preserves the sample law. It is zero
+unless both new marks are sampled. If both are sampled, it is a
+nonnegative second difference of $k\mapsto 1/(1+k)$. For $b=0$
+the sequence is identically zero.
+
+The linear interpolant of this decreasing convex sequence and
+Jensen's inequality give the minimum at the mean $t$, with equality
+under $Z_*$. The same argument for $1/m$ shows that $Z_*$ minimizes
+$\mu\mathbb E(1/Z)$, the probability of a positive count. Thus
+$p_0$ must be nonnegative whenever the bounds are feasible. If it
+is nonnegative, sample a count from $(p_m)$ and mark a uniformly
+chosen subset of that size. The marginal probabilities are $s$ and
+the pairwise probabilities satisfy the cap. This realizes the
+claimed curve. With more than $h$ harmed cases the lower bound
+still holds by restricting attention to any $h$ of them. The curve
+is a mixture of concave finite-population curves, and the uniform
+placement and no-hit argument from the first theorem gives the
+matching minimax allocation bound.
+\end{proof}
+
+With three harmed cases, $s=1/2$ and $u=1/4$ give $t=2$. The
+least favorable law has two marks with probability $3/4$ and
+zero marks otherwise. A full review therefore guarantees detection
+with probability $3/4$. The corresponding guarantees are $1/2$
+under unrestricted dependence and $7/8$ under independence.
+The pair cap here is the same as the joint probability under
+independence, yet even exact pairwise probabilities leave room
+for a shared blind spot across all three cases.
+
+The exact verifier enumerated the vertices of the count moment
+polytope for 1,296 panels. It found 274 infeasible panels and
+matched 6,682 sample-size minima on the feasible ones. An audit
+can use a joint-detection bound derived from adjudicated paired
+cases if the design justifies transferring that bound to the queue.
+The formula supplies the detection guarantee conditional on that
+bound. It does not estimate it from unaudited cases.
+
+\newpage
+\section{When the model needs to change}
+Unequal review costs can invalidate the interpolation. For
+example, let there be one case per group, review costs two and
+one, and budget one. A fractional calculation with expected
+counts $(1/3,1/3)$ satisfies the expected budget but no feasible
+realization can inspect the first group. Its worst-group
+detection probability is zero. In that setting a mixed strategy
+must be supported on actually feasible cost allocations.
+Overlapping group membership also changes the feasible set
+because one review can count toward several floors.
+
+A prospective audit should preregister group definitions,
+actual slot costs, and the harm counts for which it reports
+power. The method can balance scarce review effort for an
+agent's decisions, while a reliable predictor, variable review
+duration, or false positive labels would change the optimization.
+When review sensitivity depends on assignments or on prior
+reviews, evaluate that process before adopting either mark law.
+Report the realized allocation, the audit design's detection
+probability, and any failed coverage floors as separate facts.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{gandhi}
+Rajiv Gandhi, Samir Khuller, Srinivasan Parthasarathy, and
+Aravind Srinivasan. Dependent Rounding and Its Applications to
+Approximation Algorithms. Journal of the ACM 53(3), 2006.
+\url{https://www.cs.umd.edu/~srin/PDF/2005/depround-dec05.pdf}.
+\end{thebibliography}
+\end{document}

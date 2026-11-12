@@ -1,0 +1,259 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Consent Guarantees for Multi-Step Assistance}}
+\newtheorem{proposition}{Proposition}
+\title{Consent Guarantees for Multi-Step Assistance}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A model can learn to anticipate needs and still overstep when permission
+is uncertain. We derive the maximal action set that satisfies a veto in
+every situation compatible with an observation. A finite audit checks
+28,672 combinations of observations and permissions. For multi-step
+assistance, we characterize which permitted first moves retain a
+guaranteed route to completion or safe handoff. A legal preparation
+can fail this test when it creates a commitment that cannot be
+canceled. A separate synthetic training comparison distinguishes
+verified permission from imputed approval. An exact maximal-set
+representation can shrink the continuation check when several
+possible histories share the same available actions.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} What may an assistant do when authority is
+partly observed and later steps could require separate consent?
+\paragraph{Finding.} The intersection of compatible permission
+sets governs each effect. A finite-horizon continuation test
+identifies which permitted first actions can still finish or hand
+off safely in every compatible state.
+\paragraph{Evidence and scope.} Exact finite checks cover
+immediate permissions and multi-step continuations. The fitted
+comparison uses synthetic supervision. The guarantees require
+valid permission sets and transitions that include every feasible
+authority change.
+
+\section{Preference and authority}
+Cooperative inverse reinforcement learning studies how a robot can
+infer a human's objective from interaction \cite{cirl}. Inferring
+that someone probably wants an outcome leaves a separate question
+about who may choose how to pursue it. A development example should
+make that distinction explicit. Compare offering to reschedule a
+meeting with actually moving it. The latter also affects colleagues
+and may require authorization the current user cannot give.
+
+Let $C(o)$ be the nonempty set of states still compatible with a
+trusted observation $o$. In state $s$, let $P(s)$ contain the actions
+permitted by all relevant authorities under the declared policy.
+Include separate actions for asking, deferring, and reversible
+assistance. The set $P(s)$ can vary with jurisdiction and action scope.
+\begin{proposition}
+The maximal set of actions safe against any compatible veto is
+\[
+ P_*(o)=\bigcap_{s\in C(o)}P(s).
+\]
+A randomized action policy guarantees
+this property exactly when its support lies in $P_*(o)$.
+\end{proposition}
+\begin{proof}
+Each member of the intersection lies in every permission set. Each
+excluded action has at least one compatible state in which it is
+forbidden. Assigning that action positive probability gives positive
+probability of violating a veto in that state. Conversely all mass
+inside the intersection is permitted in each state.
+\end{proof}
+
+Place estimated benefit inside this permission boundary. Even
+with correct gains, a positive weighted sum can compensate for
+a protected person's loss by assigning sufficiently large gains
+to others. The companion finite check enumerates 125 three-person
+gain vectors. Of these, 27 have a positive sum and at least one
+negative component. A protected welfare floor would reject those
+vectors. Actual authorization is a separate input to $P(s)$,
+and a predicted gain cannot provide it.
+
+\section{Permission across a sequence of effects}
+Suppose permitted preparatory actions can change the available
+later choices. Let $T(s,a)$ be the nonempty set of possible
+successor states after executing action $a$ in state $s$.
+Let the resulting trusted observation $z$ reveal a subset of
+those successors. Include authorization changes and any effects
+bundled with the action in this model. A set $G$ consists of
+states in which the workflow may finish or hand off safely.
+Stopping in a state outside $G$ fails the stated completion
+requirement.
+
+For a current compatible set $B$, define $V_0(B)$ to hold
+exactly when $B\subseteq G$. An action $a$ is viable with $h$
+steps remaining if $h>0$, it is permitted throughout $B$, and
+for each observation $z$ with a nonempty successor set
+\[
+B_{a,z}=\{s'\mid s'\in T(s,a)\text{ for some }s\in B,\ 
+                       \text{the observation is }z\}
+\]
+we have $V_{h-1}(B_{a,z})$. Set $V_h(B)$ to hold when
+$B\subseteq G$ or there is at least one viable action.
+This is a finite-horizon use of the state-set construction
+for games with imperfect information \cite{chatterjee}.
+
+\begin{proposition}
+The viable actions are exactly the first actions of policies
+that obey all permissions and finish or hand off within $h$
+steps in every modeled history. Under a pathwise guarantee,
+a randomized policy can use only such first actions.
+\end{proposition}
+\begin{proof}
+At horizon zero the only decision is to stop, which is safe
+exactly when all compatible states are terminal. At positive
+horizon the first action must satisfy the immediate permission
+intersection. Every reachable observation leaves a continuation
+problem with one fewer step. A legal policy needs a continuation
+in each branch. Conversely, assembling one legal continuation
+per branch after a permitted action gives a legal policy.
+Induction proves the equivalence. A positive probability of a
+nonviable action gives positive probability to a choice without
+the required pathwise guarantee.
+\end{proof}
+
+Consider a document assistant that may either ask for consent
+or prepare a release in an external tool. Asking reveals whether
+it may commit, and a refusal permits safe handoff. Preparing is
+currently permitted in both worlds but creates a reservation.
+If consent is absent and the reservation has no permitted
+cancel path, preparation can strand the workflow. With a
+two-step horizon, only asking is viable. Adding a permitted
+cancel action makes preparation viable too. The cancel path
+must be enforced by the external tool, with a fresh permission
+check for every later effect.
+
+For 128 four-state fixtures, an independent oracle enumerated
+all bounded policy trees and evaluated each in every compatible
+initial world and successor. It agreed with the recurrence on
+512 model and horizon combinations. Across the positive
+horizons there were 341 immediately permitted first-action
+occurrences with no viable continuation. The counts describe
+the synthetic generator and do not estimate actual overreach.
+
+\section{Checking viability with maximal compatible sets}
+Viability is downward closed. A policy that works from $B$ also
+works from any $B'\subseteq B$. Therefore it is enough to retain the
+inclusion-maximal viable sets $\mathcal M_h$. The initial family is
+$\mathcal M_0=\{G\}$. For a given action $a$, let $S_a$ be its set
+of permitted states. For observation $z$ and a viable set $W$ at
+horizon $h-1$, define
+\[
+ D_{a,z}(W)=\{s:\ T(s,a)\cap O_z\subseteq W\},
+\]
+where $O_z$ contains the states compatible with observation $z$.
+For the deterministic observation map used in the checker, these
+sets partition the state space.
+
+\begin{proposition}
+The inclusion-maximal beliefs permitting first action $a$ are the
+maximal members of the family
+\[
+ \left\{S_a\cap\bigcap_z D_{a,z}(W_z):
+             W_z\in\mathcal M_{h-1}\text{ for every }z\right\}.
+\]
+To obtain $\mathcal M_h$, take the maximal members of the union of
+these action-specific families and $\{G\}$. The intersections can
+be computed one observation at a time, removing contained sets
+after each step.
+\end{proposition}
+\begin{proof}
+An observation successor is viable exactly when it is contained
+in some maximal viable set at the preceding horizon. That holds
+for the successor after $a$ and $z$ precisely when every initial
+state lies in the corresponding $D_{a,z}(W_z)$. Intersect with
+$S_a$ for immediate permission. An observation with no reachable
+successor imposes no additional constraint. This proves the family
+formula. If $P\subseteq Q$ are two partial intersections, then
+$P\cap D\subseteq Q\cap D$ for any later factor $D$. Dropping
+$P$ therefore preserves the downward closure of the result.
+Stopping contributes $G$ separately.
+\end{proof}
+
+Keep the maximal sets separately for each first action if the gate
+must return every viable choice. A system can cache these sets for a
+fixed permission model and look up a new belief by containment. A
+changed permission or transition rule requires rebuilding the relevant
+frontiers. This is an exact representation, with no general bound on
+the number of maximal sets that a model can produce.
+
+A structured fixture used sixteen possible states, eight probe
+observations and four commit choices. Every state admitted the probe,
+which revealed its pair. The correct commit then depended on that
+pair. At the second horizon, direct expansion would enumerate
+327,680 combinations across actions. The folded calculation used
+160 pairwise intersections. This compares enumeration work on that
+fixture. The check also compared all first actions against a subset
+oracle across 131,072 belief and horizon pairs on the fixture and
+9,216 on smaller models. One negative control sent two successor
+states to the same observation. Each admitted a different terminal
+move, and the gate rejected the shared predecessor because the
+operator could not know which move was permitted.
+
+\section{Labeling cases during training}
+Construct matched triples with the same helpful objective: explicit
+authorization, explicit veto, and missing or ambiguous authority.
+Label the minimal legitimate act in each case. Preserve examples
+where scope differs, such as permission to draft a message without
+permission to send it. Train a permission prediction head with
+evidence about who can authorize which effects. Use a structured
+loss on probability mass assigned to excluded actions and a separate
+loss rewarding practical, authorized help. A low average loss leaves
+individual violations possible, so action execution still needs a
+trusted, fresh authority check.
+
+A permission query is valuable when it can distinguish the compatible
+states and a permitted route remains open. Some requests are intrusive
+or repetitive. Include cases where a reversible offer is a better
+choice than asking again. A refusal carries no negative engagement
+penalty in this curriculum.
+
+For a multi-step curriculum, label each viable action from a
+declared transition model. Keep tests where asking reveals a
+refusal, authority expires between steps, or a previously offered
+cancel path fails. If a transition is possible but missing from
+the model, the guarantee is invalid. Treat approval evidence and
+its freshness as inputs to the effect gate.
+
+\section{Finite check and limits}
+Three latent states, four actions, and every nonempty compatible-state
+set give $16^3(2^3-1)=28{,}672$ checks. Bitwise intersection agreed
+with a separately computed per-action veto scan. In the minimal
+witness, an action permitted by one compatible state and vetoed by
+another is excluded even if the permitted state is assigned high
+probability. The guarantee requires the true state to be represented
+and the permission sets to be correct. A fabricated authorization
+or omitted affected party defeats those premises. A later study
+should measure overreach and needless refusal separately, including
+revocation and cross-person authority.
+\section{Learning from imputed and verified permission}
+Each seed trained two logistic policies with explicit approval,
+veto, and unknown encoded separately. One training target treated
+85\% of unknown cases as approved. The other required observed
+affirmative authority. An independently sampled 3,200-case panel
+contained 788 authorized cases and 2,412 cases with a veto or
+unknown authority. The imputed target led to 1,641 unauthorized
+executions. The verified target led to zero. Both executed in all
+788 authorized cases. This binary experiment tests the supervision
+rule for execution. It leaves the choice among asking, waiting, and
+giving safe assistance to a larger action study.
+
+\paragraph{Review status.} Independent manuscript review and a language-model study remain open.
+
+\begin{thebibliography}{9}
+\bibitem{cirl} D. Hadfield-Menell, A. Dragan, P. Abbeel and S. Russell.
+Cooperative Inverse Reinforcement Learning.
+\url{https://arxiv.org/abs/1606.03137}.
+\bibitem{chatterjee} Krishnendu Chatterjee, Laurent Doyen,
+Thomas A. Henzinger, and Jean-Fran\c{c}ois Raskin.
+\emph{Algorithms for Omega-Regular Games with Imperfect Information}.
+Logical Methods in Computer Science 3(3:4), 2007.
+\url{https://arxiv.org/pdf/0706.2619}.
+\end{thebibliography}
+\end{document}

@@ -1,0 +1,299 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Matched Preference Labels Under Source Failures}}
+\newtheorem{proposition}{Proposition}
+\title{Matched Preference Labels Under Source Failures}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Matched preference labels should agree or reverse under specified
+changes to a scenario. Signed-graph balance detects inconsistent
+rules and gives a cycle that an editor can inspect. When reference
+labels may share a faulty source, a vertex-cover calculation
+identifies which label orientations are still forced. Exhaustive
+finite checks verify both reductions. A separate lexical experiment
+on public deontology annotations compares responses within the same
+scenario, tests the hard split, and measures how often the same
+responses change ranking across scenarios. The structural guarantee
+requires valid matching rules and a source-fault budget.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} What can paired supervision establish when
+comparisons are consistent but the reference labels are uncertain?
+\paragraph{Finding.} A signed graph certifies consistency. A separate
+vertex-cover test certifies which orientations remain forced under
+a stated source-fault budget.
+\paragraph{Evidence and scope.} The reductions are proved
+and checked with exact oracles. A fitted lexical study on a public
+corpus evaluates matching as a diagnostic, without attesting the
+correctness of an annotation, a person's preferences, or an agent's
+future actions.
+
+\section{What a swap should preserve}
+Counterfactual fairness treats certain demographic changes as
+interventions whose effect on a decision depends on a causal
+model \cite{kusner}. During data construction the narrower task is
+to enforce a declared symmetry only when relevant roles, permissions
+and facts are held fixed. Swapping a name under unchanged authority
+may leave the preferred action the same. Swapping the roles of
+the person who gave consent and the person who did not can legitimately
+change it. A pair needs a reason for its sign.
+
+Label a finite set of matched cases by $y_i\in\{-1,1\}$,
+meaning one of two clearly ordered responses wins. Each edge
+requests $y_i y_j=s_{ij}$, where sign $+1$ preserves the preference
+and sign $-1$ reverses it. The graph-balance characterization is the classical criterion of
+Harary, as presented by Zaslavsky \cite{zaslavsky}. For example,
+if two successive swaps preserve a label, the direct comparison
+between their endpoints cannot reverse it. The three edges form a
+negative cycle. An editor can inspect those three transformation
+rules before deciding whether to collect more labels.
+
+\begin{proposition}
+The constraints are satisfiable exactly when every cycle has
+positive sign product.
+\end{proposition}
+\begin{proof}
+Multiplying the constraints around a cycle cancels each $y_i$
+twice, giving one. Conversely fix a root label in each component
+and propagate labels by multiplying along a spanning tree.
+Every non-tree edge closes a cycle. Its sign equals the product
+along the tree path by positivity of that cycle, so its constraint
+is satisfied.
+\end{proof}
+
+\section{What the developer should do with a conflict}
+When a cycle fails, preserve the source cases and the transformation
+that generated each edge. Review the first inconsistent cycle before
+tuning the model. A missing role distinction can justify deleting
+or reversing an edge with a logged reason. Ambiguous consent may
+need a third response type, which lies outside the binary model.
+Anchor valid components with independently adjudicated examples.
+Without an anchor, flipping every label in a component preserves
+all edges, so structural consistency cannot identify which action
+is actually appropriate.
+
+\section{A shared fault budget for anchor sources}
+After the balance check, fix one satisfying labeling $g_i$ on
+each component. Every other satisfying labeling has the form
+$y_i=x_{C(i)}g_i$, where $x_c\in\{-1,1\}$ is the orientation of
+component $c$. An anchor from root $r$ asserting $y_i=b$
+endorses $x_{C(i)}=bg_i$. All reports traced to the same original
+adjudication are charged to the same root, even if they arrive
+through different reviewers. Assume the signed relations are
+correct and that some set of at most $f$ roots accounts for
+every incorrect anchor. No probabilistic independence assumption
+is needed.
+
+Let $F$ contain the roots that endorse both signs of any one
+component. Form the conflict graph $H$ on the other roots,
+joining two roots when their endorsements disagree on a
+component. For a partial orientation $z$, let $F_z$ be $F$
+together with every root that contradicts any of its pinned
+orientations. Write $\tau(G)$ for the minimum size of a vertex
+cover of $G$.
+
+\begin{proposition}
+A partial orientation $z$ extends to a labeling compatible with
+the fault budget exactly when
+\[
+ |F_z|+\tau(H-F_z)\le f .
+\]
+\end{proposition}
+\begin{proof}
+Every root in $F_z$ must be removed. Every edge left in $H-F_z$
+has incompatible endpoints, so the remaining removals must cover
+all its edges. Conversely, remove $F_z$ and a cover of those
+edges. Each component now receives either one sign or no sign
+from the surviving roots. Its sign can be set to that unanimous
+endorsement, to its pin if it has one, or freely in the absence
+of both. The resulting labeling satisfies all the signed pairs
+and all surviving anchors.
+\end{proof}
+
+Test both pins for each component. If only one is feasible, the
+budget forces it. If both are feasible, retain the ambiguity.
+If neither is feasible, the budget and reports are jointly
+inconsistent. For the bounded cover search, choose a remaining
+edge and branch on removing either endpoint. A residual budget
+of $k$ therefore requires at most $2^{k+1}-1$ search nodes,
+with polynomial work at each node. For unbounded $f$ the
+feasibility problem is NP-complete by the classical vertex cover
+problem \cite{karp}. To realize an arbitrary conflict graph,
+introduce one singleton component per edge and have the two
+endpoint roots endorse opposite signs on it. A set of removed
+roots is a certificate whose consistency is checked directly.
+
+Suppose root A endorses the positive sign on two components,
+while roots B and C each endorse the negative sign on a
+different one. A budget of one leaves either sign possible
+when each component is examined alone. Jointly, the only
+one-root cover is $\{\mathrm{A}\}$, and both orientations are
+negative. If A's reports are copied through more reviewers,
+the conclusion is unchanged when provenance is preserved.
+An editor can use this test to direct adjudication toward
+components that remain ambiguous. If the signed comparisons,
+source identities, or fault budget are wrong, the result
+does not certify the resulting labels.
+
+\section{Exhaustive check and model experiment}
+Each pair of four vertices can be absent, positive, or negative.
+The audit compares traversal with all sixteen complete assignments
+for $3^6=729$ signed graphs. Both methods classify 393 as
+consistent. The three-edge witness with two positive and one
+negative edge has no solution. For the source-fault extension,
+direct orientation enumeration agreed with the cover solver on
+472,392 pinned queries across 19,683 ternary matrices and four
+budgets. In 9,792 component-and-budget cases a feasible global
+model forced a sign that the isolated component left ambiguous.
+The solver also agreed with exhaustive source-subset search on
+all 1,024 five-root conflict graphs, with six budgets per graph.
+These counts describe the finite test design. A later study should
+inject matched-example contradictions and compare training after
+source-level review with training after discarding examples
+without explanation. Evaluate justified asymmetries separately from
+identity invariance. Consistency of declared pairs still depends on
+their causal and normative validity.
+\section{Learning from independently anchored pairs}
+We generated paired supervision with an unchanged task signal and
+a swapped identity cue. In a designated quadrant we corrupted
+90\% of positive labels. The repaired training arm used the
+simulator's independent truth for each pair as its anchor and
+propagated the known preserving sign to the other member.
+Both arms fitted logistic scorers of the same form. On 3,200
+held-out pairs, the raw labels produced 1,646 swap disagreements
+and 4,740 correct individual decisions out of 6,400. Anchored
+labels yielded zero disagreements and 6,400 correct decisions.
+This experiment models valid anchor information. Agreement
+alone would also allow both members of a pair to be wrong.
+
+\section{Matched scoring on public deontology judgments}
+The ETHICS deontology files pair scenarios with responses
+and include binary judgments \cite{hendrycks}. They provide
+multiple responses to the same scenario. This experiment
+asks how well a lexical scorer orders those responses.
+It does not infer signed invariances or adjudicate the
+provenance of individual labels.
+
+Before fitting, we fixed four feature views and hashed the
+data. We fit add-one lexical likelihood ratios from 18,161
+training rows after removing three duplicates. Scenario
+words, response words and a small relation block have
+separate likelihood ratios. Each vocabulary keeps features
+seen at least three times. The relation block includes
+shared tokens, a capped overlap count and joint negation
+flags. Compare scenario alone, response alone, their
+additive sum, and the additive sum with the relation block.
+The same training class prior is used for every row
+classification decision. There is no test tuning.
+
+We exclude test scenarios whose case-and-whitespace-normalized
+text appears in training. This removes 1,300 ordinary rows and
+736 hard rows. The remaining splits share one normalized
+scenario with each other. This filter addresses exact scenario
+overlap and does not test for paraphrases. Within a scenario,
+compare every label-one response with every label-zero response,
+award half credit for ties, and average the resulting proportions
+equally across scenarios. There are 2,252 comparisons across
+574 ordinary scenarios and 2,742 across 700 hard scenarios.
+
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{Ordinary, 2,296 rows}
+ & \multicolumn{2}{c}{Hard, 2,800 rows} \\
+Score & Row correct & Pair order & Row correct & Pair order \\
+\midrule
+Scenario & 1,160 & 0.5000 & 1,402 & 0.5000 \\
+Response & 1,618 & 0.8077 & 1,696 & 0.6597 \\
+Additive & 1,580 & 0.8077 & 1,693 & 0.6597 \\
+Additive with relations & 1,569 & 0.8046 & 1,693 & 0.6596 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The scenario-only score ties by construction. In the additive
+score the scenario term cancels between two responses to the
+same scenario, so its ranking is exactly the response-only
+ranking. Its row decisions can still change. The tested
+relation features failed to improve within-scenario ranking
+on either split. The response-only score lost about 14.8
+percentage points on the hard split. These two splits do
+not identify which cues caused that change. A dataset editor
+can use this matched diagnostic alongside row scores to check
+whether a model distinguishes plausible responses to the
+same request, while auditing label validity separately.
+
+\section{When the scenario must change the answer}
+Matching controls the scenario within each comparison. A benchmark
+can still reward a response-only score if the same responses seldom
+need different treatment across scenarios. For normalized response
+$e$, let $n_{e,0}$ and $n_{e,1}$ count its observed labels. Every
+deterministic response-only classifier makes at least
+$\sum_e\min(n_{e,0},n_{e,1})$ row errors. Predicting the empirical
+majority for each response achieves that minimum on the given rows.
+That oracle uses the test labels and serves as an identifiability
+check, without estimating a deployable classifier's accuracy.
+
+For rankings, let $w_{ab}$ be the total macro weight of comparisons
+requiring response $b$ to score strictly above $a$. Each mixed
+scenario has equal weight, split equally over its opposite-label
+pairs. With half error for ties, any response-only score incurs
+at least
+\[
+ \sum_{\{a,b\}}\min(w_{ab},w_{ba})
+\]
+macro error, where each unordered pair appears once. Ordering
+the responses either way incurs one directional weight. Tying
+them incurs half their sum. Each case costs at least the smaller
+weight. An additive scenario term cancels within each pair, so
+the same bound applies to additive scoring. Longer cycles can
+force error even when every term in the sum vanishes. Exact
+enumeration of weak orders verified the bound on 729 weighted
+three-response configurations, with equality in 675.
+
+In the ordinary split, no normalized response carries both labels.
+In the hard split, six responses do, covering twelve rows and
+forcing at least six errors out of 2,800 for a response-only rule.
+Neither split contains an exact reversal of an observed response
+pair. The direct-reversal floor is therefore zero on both. This
+test exposes a small number of incompatible row labels. It cannot
+tell whether each conflict reflects context, a missing detail, or
+annotation error. It also cannot identify what caused the earlier
+ranking gap.
+
+There are 67 ordinary and 66 hard rows whose normalized response
+appears in training. As an overlap sensitivity check, we dropped
+every test scenario containing any such response, leaving 511
+ordinary and 642 hard scenarios. With the scorer fixed, response
+concordance remained $0.8037$ and $0.6635$, respectively. The
+gap persisted under the exact-overlap filter. Paraphrase and template overlap remain
+untested. A prospective benchmark could use adjudicated pairs of
+scenarios in which the same two candidate responses trade places
+under a controlled change in permission or relevant facts. The
+resulting reversals would force a known error floor for any model
+that ignores the scenario.
+
+\paragraph{Review status.} Independent manuscript review and a language-model study remain open.
+
+\begin{thebibliography}{9}
+\bibitem{kusner} M. J. Kusner, J. Loftus, C. Russell and R. Silva.
+Counterfactual Fairness. \url{https://arxiv.org/abs/1703.06856}.
+\bibitem{zaslavsky} Thomas Zaslavsky. Signed graphs.
+Discrete Applied Mathematics 4, 47--74, 1982.
+\url{https://davinci.fmph.uniba.sk/~matok1/diplomovka/sources/Zaslavsky-former.pdf}.
+\bibitem{karp} Richard M. Karp. Reducibility Among Combinatorial
+Problems. In \emph{Complexity of Computer Computations},
+85--103, 1972.
+\url{https://cgi.di.uoa.gr/~sgk/teaching/grad/handouts/karp.pdf}.
+\bibitem{hendrycks} Dan Hendrycks et al.
+Aligning AI With Shared Human Values. \emph{ICLR}, 2021.
+\url{https://arxiv.org/abs/2008.02275}.
+\end{thebibliography}
+\end{document}

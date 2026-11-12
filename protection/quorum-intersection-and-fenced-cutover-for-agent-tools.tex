@@ -1,0 +1,359 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Quorum Intersection and Fenced Cutover for Agent Tools}}
+\newtheorem{theorem}{Theorem}
+\title{Quorum Intersection and Fenced Cutover for Agent Tools}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+Two configurations can each satisfy their own quorum rule while
+permitting disjoint certificates across a membership change.
+We give exact minimum intersections for direct, staged, and
+joint threshold certificates. A single median determines the
+joint minimum. For two stages that may coexist, these minima
+determine whether the common signers must include someone outside
+the fault budget. Exhaustive signer-set checks verify the formulas
+on small committees. A separate finite model tests how a sink
+can end old authority before accepting a new epoch while
+preserving the record of earlier irreversible effects. For
+collective effects, closure and prior absence depend on different
+families of sink sets. Exact evidence cuts identify when partial
+acknowledgments suffice. A local SQLite experiment exercises
+transaction ordering and interrupted acknowledgments.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} How much overlap and terminal evidence are needed
+when changing the signers that authorize an effect?
+\paragraph{Finding.} Exact threshold intersections characterize whether
+certificate pairs must share an honest signer. Sink closure prevents
+later old effects. Final occupancy evidence is separately needed to avoid
+duplicating an earlier irreversible effect.
+\paragraph{Evidence and scope.} The overlap formulas and cutover
+rule are supported by exact set and interleaving checks. They apply to
+authorization gates that enforce durable signer and sink rules, without
+establishing a deployed consensus protocol.
+
+\section{What needs to intersect}
+Let the old committee $A$ have size $m$ and the new committee
+$B$ have size $n$, with $s=|A\cap B|$. The old and new thresholds
+are $a$ and $b$, respectively, each positive and no greater than
+its committee size. A joint certificate is a subset of $A\cup B$
+with at least $a$ signers in $A$ and at least $b$ in $B$. A signer
+in the intersection contributes to both thresholds.
+
+Raft uses majorities in both configurations during joint consensus
+\cite{raft}. Byzantine quorum systems require an intersection
+containing sufficiently many correct signers \cite{malkhi}.
+Here the same conflict domain is enforced across configurations,
+at most $f$ signer identities may equivocate across that domain,
+and every other signer durably refuses to sign conflicting
+effects. Under these assumptions, a pair of certificate families
+rules out conflicting certificates exactly when its minimum
+intersection exceeds $f$. If the minimum is at most $f$, the
+common signers in a minimizing pair may all equivocate and the
+disjoint remaining signers can each sign one effect.
+
+\section{Exact thresholds}
+Write $[x]_+=\max(0,x)$, $p=m-s$, and $q=n-s$. Let $I_{AB}$,
+$I_{AJ}$, $I_{JB}$, and $I_{JJ}$ denote the minimum signer
+intersections for old/new, old/joint, joint/new, and joint/joint.
+
+\begin{theorem}
+The first three minimum intersections are
+\begin{align*}
+ I_{AB}&=[a+b-(m+n-s)]_+,\\
+ I_{AJ}&=[a+\max(a,b-q)-m]_+,\\
+ I_{JB}&=[b+\max(b,a-p)-n]_+.
+\end{align*}
+For the joint/joint minimum define $h=\max(0,a-p,b-q)$,
+$\alpha=2a-p$, and $\beta=2b-q$. Let $T_*$ be the median
+of $(s,\alpha,\beta)$ clamped to $[2h,2s]$. Then
+\[
+ I_{JJ}=[T_*-s]_++[\alpha-T_*]_++[\beta-T_*]_+ .
+\]
+\end{theorem}
+\begin{proof}
+For direct overlap, fill the exclusive parts first. The smallest
+necessary shared counts are $[a-p]_+$ and $[b-q]_+$. Two subsets
+of the shared pool with those sizes can overlap by as little as
+their summed size minus $s$, floored at zero. This simplifies to
+the formula for $I_{AB}$.
+
+A joint certificate must contain at least $\max(a,b-q)$ signers
+from $A$. Fill $B$'s exclusive part as far as possible, then meet
+the remaining $B$ threshold from the shared pool and complete the
+$A$ threshold. This attains the lower bound. An old certificate
+can take as many of its signers as possible from the complement
+of that set in $A$, which proves the formula for $I_{AJ}$.
+Exchanging the committee roles gives $I_{JB}$.
+
+For two joint certificates with shared counts $c_1,c_2$, the
+exclusive counts can be chosen as $[a-c_i]_+$ in the old
+pool and $[b-c_i]_+$ in the new pool. The shared counts range
+from $h$ to $s$. Let $T=c_1+c_2$. The least overlap in the
+shared pool is $[T-s]_+$. The sum of exclusive old counts
+is at least $[2a-T]_+$, and the sum of exclusive new counts
+is at least $[2b-T]_+$. Both bounds are attained together by
+taking $c_1=\lfloor T/2\rfloor$ and $c_2=\lceil T/2\rceil$.
+For each pool we can choose the two subsets to attain their
+minimum overlap, independently of the other pools. It follows
+that the exact minimum for fixed $T$ is
+$[T-s]_++[\alpha-T]_++[\beta-T]_+$.
+The slope starts at $-2$ and increases by one at each
+breakpoint $s,\alpha,\beta$, counting multiplicities. A median
+minimizes the expression, and clamping it to the feasible
+interval preserves optimality. All endpoints and breakpoints
+are integers, so the minimum is attained at a feasible integer.
+\end{proof}
+
+\section{Availability and a single equivocator}
+A joint certificate remains possible under every withholding of
+at most $f$ signers, with $f<\min(m,n)$, exactly when
+$a\le m-f$ and $b\le n-f$. Sufficiency follows because enough
+signers remain in each committee. Necessity follows by placing
+all $f$ omissions inside one committee. Among thresholds meeting
+these inequalities, the largest ones maximize the direct
+minimum, giving $[s-2f]_+$. Thus concurrent old and new
+authorization with a guaranteed honest common signer under
+these availability conditions requires $s\ge 3f+1$.
+
+The same-epoch minima are $[2a-m]_+$ for two old certificates
+and $[2b-n]_+$ for two new certificates. Suppose a staged
+cutover permits old and joint certificates to coexist, then
+joint and new, and a fence rules out old and new coexistence.
+With the largest available thresholds $a=m-f$ and $b=n-f$,
+the old/joint and joint/new minima equal the two same-epoch
+minima. The joint/joint minimum is at least their maximum.
+Hence $m,n\ge3f+1$ is necessary and sufficient for all allowed
+pairs to have an honest intersection under the availability
+requirement, regardless of shared membership. The necessity
+comes from each configuration's own pair of certificates.
+The conclusion relies on enforcing the permitted coexistence
+schedule at the sinks.
+
+For the old committee $\{A,B,C\}$ and the new committee
+$\{C,D,E\}$ with majority thresholds, the exact minima
+in the order above are $(0,1,1,1)$. The two valid joint
+certificates $\{A,C,D\}$ and $\{B,C,E\}$ intersect only
+at $C$. A single equivocator can therefore defeat the
+honest-intersection requirement even for two joint certificates.
+For disjoint four-member committees with threshold three,
+the minima are $(0,2,2,4)$. With one potentially faulty
+signer, adjacent phases have an honest intersection, but old
+and new alone still have none.
+
+\section{Closing the old epoch at the effect sinks}
+Chubby's sequencers attach a generation to a lock and allow
+the effect server to reject stale use \cite{burrows}. In the
+following model, the authorization service knows the complete
+set of sinks that may still commit an old effect. It freezes
+issuance of old rights or enforces a ceiling on every old
+right's lifetime before activation. Each trusted sink checks
+the epoch and expiry at its irreversible commit point.
+The adversary may delay requests, evidence, and epoch messages.
+
+For sink $i$, let $e_i$ be a certified hard upper cutoff,
+so all its old commits occur strictly before $e_i$. Let $b_i$
+be the time at which the coordinator first receives proof of
+the sink's irreversible old-epoch fence. The fence and commit
+decisions share a durable order. A missing bound is represented
+by $+\infty$. Under these evidence rules, the earliest time
+at which all old authority is known closed is
+\[
+ t_{\rm close}=\max_i \min(e_i,b_i).
+\]
+At that time each sink has either passed its cutoff or supplied
+proof of a fence. Before that time there is a sink with
+neither form of evidence. If an otherwise eligible old request
+can still commit there, delaying the fence and delivering the
+request yields a history consistent with what the coordinator
+knows. This makes the bound exact for these observations when
+no other mechanism can exclude such a request. When the
+coordinator knows only an interval for the current time, it
+uses the lower endpoint to establish that expiry has passed.
+
+For example, take two sinks with hard old cutoffs $(9,13)$
+and received fence proofs at times $(11,8)$. The coordinator
+has closure evidence for both at time nine. A prior absence
+report from the first sink may still be stale, since it could
+have committed between the report and time nine. This remains
+possible even if the old and new signer sets each met their
+own quorum rule.
+
+Closing the old epoch prevents future old commits. A new
+commit that must be unique across both epochs also needs
+evidence about the past. For each sink, require a terminal
+record for the conflict key. Such a record reports whether
+an old effect already committed and is produced atomically
+with the fence or from an authoritative snapshot after
+closure. Bind it to the sink, epoch, and conflict key.
+Only a full set of absent records admits the new effect.
+An unknown record leaves the key blocked, even after expiry.
+
+To see sufficiency, an absent terminal record rules out a
+prior commit at its sink, and closure rules out any later old
+one. The argument applies to every sink that could have
+committed the key. For necessity in this observation model,
+a missing terminal record can leave two indistinguishable
+histories, one with a prior commit and one without it. An
+absence observation from before closure may be followed by a
+commit before the fence or expiry. The same test can use an
+authoritative shared journal if it provides equivalent
+complete evidence. The rule concerns uniqueness of the
+specific irreversible effect. It does not undo a committed
+effect or grant new authority on its own.
+
+\subsection{Partial evidence for collective effects}
+Some tools can commit an effect only when several sinks remain
+live under the old epoch. Let $\mathcal H$ be a nonempty family
+of nonempty sink sets. Every old commit requires all the members
+of some $H\in\mathcal H$ to be live at its irreversible commit
+point. Write $c_i=\min(e_i,b_i)$ for the time when closure at sink
+$i$ is certified. A missing certificate and cutoff give $c_i=+\infty$.
+
+Past effects need a separate assumption. Let $\mathcal R$ be the
+nonempty family of possible durable record footprints for one old
+commit on the conflict key. Each footprint is nonempty. Write $a_i$
+for the time a trustworthy terminal absence record from sink $i$
+is available. An unknown or positive record has $a_i=+\infty$.
+The absence record covers the key and epoch and rules out a durable
+old commit mark at that sink. It must cover the entire old epoch,
+including in-flight effects and any delayed replication of the mark.
+
+\begin{theorem}
+Under these evidence rules, closure and prior absence are certified
+respectively by times
+\[
+ \max_{H\in\mathcal H}\min_{i\in H}c_i,
+ \qquad
+ \max_{R\in\mathcal R}\min_{i\in R}a_i.
+\]
+The first bound is exact when each unhit live set can still
+commit in some history consistent with the observations. The second
+is exact when a footprint disjoint from all observed terminal absences
+can still belong to a past commit consistent with those observations.
+\end{theorem}
+\begin{proof}
+After the first bound, the closed sinks meet every required live set.
+An old commit would require a live sink in that closed set, which is
+impossible. Before the bound, an unhit live set remains. The stated
+realizability assumption supplies a continuation with an old commit.
+For past effects, every possible footprint meets the set of observed
+terminal absences after the second bound. A prior commit would then
+contradict an absence record. Before that bound, there is a footprint
+containing no such record, and the realizability assumption supplies
+a compatible old commit. The first time every set is hit is the latest
+of the first-hit times, giving both formulas.
+\end{proof}
+
+With $n$ sinks and every $q$-sink subset allowed as a live set,
+$n-q+1$ closure proofs suffice. In a five-sink example, take
+$q=3$ and closure times $(2,5,8,11,+\infty)$. Closure is certified
+at time eight. If every old effect leaves a durable mark on some
+two-sink subset, and terminal absence times are $(3,6,9,12,+\infty)$,
+prior absence is certified at time twelve. These tests together
+permit a unique new effect at time twelve if the new authority
+and its other gates already hold. A sink can remain unreachable.
+
+Cached signatures cannot count as live participation at commit.
+For a two-out-of-three gate, a sink can sign at time one and close
+at time two. Another closes at time three. At time four the last
+sink can add a valid old signature to the saved one. A gate that
+checks only the signatures can still accept the old effect.
+The live-set calculation applies only if the commit protocol
+itself enforces the required epoch checks at linearization.
+
+\section{Reproducible checks}
+The original three-by-three fixture had five disjoint pairs
+among nine old/new majority pairs. The generalized check
+compared the closed forms with enumerated signer sets on 74
+committee layouts. All 3,216 minimum-overlap comparisons and
+3,468 availability checks agreed. This is a finite check of
+the certificate arithmetic.
+
+A separate state search modeled two sinks, one conflict key,
+finite deadlines, and delayed terminal records. The proposed
+rule reached 2,677 states with neither an old commit after
+activation nor a new commit duplicating an old one. Requiring
+closure from only one sink and allowing a fence to roll back
+each admitted an old effect after activation. Taking expiry
+as proof of prior absence and using pre-closure absence each
+admitted a duplicate. The receipt contains a shortest witness
+for each change to the model. The search does not cover
+network liveness or the correctness of a physical effect sink.
+
+The collective-effect check compared both time bounds with a
+stepwise oracle on 512 cases. A separate enumeration of possible
+record footprints checked 6,336 absence patterns. It certified
+2,899 patterns with fewer than all sinks reporting. A cached-vote
+control passed the signature threshold after live closure, as
+predicted. These counts describe finite models of the declared
+commit and record rules.
+
+\subsection{A local transaction and crash experiment}
+We implemented the effect boundary as a database row with a
+conflict key. An effect starts a SQLite write transaction,
+checks the epoch and key, and inserts the row before committing.
+Fencing updates the accepted epoch and reads the key in another
+write transaction. The coordinator receives the terminal record
+only after that transaction commits. In the test, the committed
+row is the complete effect.
+
+We ran the same cases with SQLite 3.54.0 in rollback-journal
+and write-ahead-log modes, with full synchronous writes. An old
+transaction that acquired the write lock first prevented the
+fence from acquiring it. After the old commit, the fence observed
+the occupied key. Once the fence committed, the old epoch could
+no longer insert a different key. A fresh authorized key could
+still commit under the new epoch.
+
+Eight child processes exited at specified points before or after
+an effect or fence commit. Within each pair, the caller saw the
+same response and exit code. Reopening the store distinguished
+the outcomes. A pre-commit effect exit left the key absent.
+A post-commit exit left it occupied. Likewise, reopening after
+a post-commit fence exit preserved the new epoch and rejected
+an old request. Reopening after a pre-commit fence exit retained
+the old epoch until a later successful fence.
+
+Two negative controls exercised the modeled failures. A process
+that cached authority before fencing could insert an old-epoch row
+after the fence if its later transaction skipped the epoch check.
+A coordinator that inferred absence from a lost acknowledgment
+could commit the same key in a separate store, whose local key
+index could not see the original row. The correct route admitted
+a new write only after a terminal absence record from the old
+store. These tests cover process exit and local database state.
+They leave authentication, hardware power loss and effects outside
+the database to separate experiments.
+
+\section{Application and next test}
+An agent tool that authorizes sensitive writes can compare the
+minimum overlap of every certificate pair its sink may accept.
+If the tool uses staged authorization with small shared membership,
+it needs a durable fence that prevents old-only certificates
+from authorizing effects once new-only authority is active.
+Replayed certificates, disconnected sinks, and signer-state
+loss can invalidate that ordering. The arithmetic assumes the
+same durable conflict rule at every phase and says nothing
+about whether such a fence, authenticated key change, or
+network progress guarantee has been implemented.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{raft} Diego Ongaro and John Ousterhout. \emph{In Search of an Understandable Consensus Algorithm}. 2014. \url{https://raft.github.io/raft.pdf}.
+\bibitem{malkhi} Dahlia Malkhi and Michael K. Reiter.
+Byzantine Quorum Systems. \emph{Distributed Computing}
+11, 203--213, 1998.
+\url{https://users.ece.cmu.edu/~reiter/papers/1998/DC.pdf}.
+\bibitem{burrows} Mike Burrows. The Chubby Lock Service for
+Loosely-Coupled Distributed Systems. \emph{OSDI},
+335--350, 2006.
+\url{https://storage.googleapis.com/gweb-research2023-media/pubtools/4444.pdf}.
+\end{thebibliography}
+\end{document}

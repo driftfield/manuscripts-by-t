@@ -1,0 +1,331 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Recovery Certificates Under Bounded Provenance Omissions}}
+\newtheorem{theorem}{Theorem}
+\title{Recovery Certificates Under Bounded Provenance Omissions}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+An operator restoring an agent needs to know whether an incomplete
+dependency log could hide a path from compromised state to the
+restored service. We measure the smallest omission that invalidates
+a restoration certificate. Counting omitted edges is exact for an
+edge budget and can be arbitrarily optimistic when an entire log
+source can disappear. We give an exact source-based algorithm and
+an additive certificate that can sometimes settle the recovery decision
+without enumerating source combinations. On acyclic graphs, an exact
+algorithm stores only labels that can recur after the current vertex.
+The maximum number of such labels controls its state space. Separate
+source-subset enumeration checks both exact algorithms on synthetic graphs.
+An intervention can certify a logging source or rebuild an artifact.
+The two choices share a path-hitting condition, and optimizing their
+cost can be hard even when detecting a suspect path is simple.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} How many missing logging sources could conceal a
+path from compromised state to an artifact being restored?
+\paragraph{Finding.} The source-omission radius is the smallest number of
+distinct source labels along a suspect path. The exact search can
+forget labels that cannot recur, and an additive certificate can rule
+out a path under the declared source budget.
+\paragraph{Evidence and scope.} The result is proved and tested
+against source-subset enumeration. An incident team can use the
+certificate to decide whether it needs more evidence before restoring an
+artifact. The guarantee requires a complete candidate dependency graph.
+
+\section{The log that went quiet}
+Suppose an incident team rebuilds an agent's tool adapter and wants
+to restore a previously saved plan. The plan may still depend on
+compromised state through cached outputs. A missing log is especially
+important when it records several steps of one dependency chain.
+Counting those steps as several unrelated omissions gives a
+misleading picture of how much evidence must fail.
+
+Let $G=(V,E_0\cup E_*)$ be a finite directed candidate dependency
+graph after removing independently rebuilt artifacts from possible
+taint paths. The source $s$ represents suspect state and the target
+$t$ is an artifact whose recovery is proposed. Edges in $E_0$ are
+included in all modeled histories. Edges in $E_*$ are possible
+dependencies absent from the observed log. Each such edge has one
+source label $\ell(e)$. Activating a source permits all candidate
+edges with its label. We include all subsets of those permitted
+edges as possibilities. This models omission of an entire logging
+channel rather than loss of individual records.
+
+The graph and its labels require validation outside this analysis.
+If a feasible dependency is absent even from $E_*$, or if a
+rebuild does not exclude suspect inputs, the model can miss a
+taint path. A certificate records the candidate graph, the
+assumed maximum number of affected sources, and the conditions
+that would invalidate either. Logs can justify an upper omission
+budget only through evidence external to the missing entries.
+
+\section{The minimum omission that opens a path}
+For an $s$-to-$t$ path $P$ write
+\[
+m(P)=|P\cap E_*|,\qquad
+S(P)=\{\ell(e):e\in P\cap E_*\}.
+\]
+Take a minimum over the empty path family to be infinity.
+\begin{theorem}
+If any set of at most $k$ optional edges can be absent from the log,
+a hidden taint path is possible exactly when
+$\min_P m(P)\le k$. If at most $k$ logging sources can be absent,
+the corresponding condition is $\min_P |S(P)|\le k$.
+\end{theorem}
+\begin{proof}
+A feasible hidden path uses only optional edges or source labels
+admitted by the omission set. Its cost is therefore at most the
+budget. Conversely, activate precisely the optional edges or
+labels of a path within the budget. The path is now present.
+\end{proof}
+
+We call the second minimum the source radius $r$. A known path
+gives $r=0$. A proposed restoration is safe against the stipulated
+omission budget only if $r>k$. A chain of $L$ optional edges all
+recorded by one source has edge radius $L$ and source radius one.
+No constant factor can turn the edge radius into a lower
+certificate for the source radius.
+
+The edge version is a shortest path with zero or unit costs.
+The source version is a minimum-color path with free observed
+edges. The difficulty of using few distinct colors is
+established in the graph literature \cite{broersma}. In the
+directed setting, a direct reduction from set cover puts one
+layer boundary per universe element. Each arc crossing a
+boundary has a color corresponding to a set that contains that
+element. A path selects one such arc per element, and its
+distinct colors form a cover. Parallel arcs can be removed by
+inserting a private intermediate vertex and a free edge.
+Thus a polynomial exact algorithm is not expected in general.
+
+\section{A fast certificate and an exact fallback}
+Assume the candidate graph is acyclic, as in a dependency log
+ordered by creation. For each optional source $g$ let $M_g$
+be the maximum number of its edges on any $s$-to-$t$ path.
+Compute $M_g$ by a longest-path pass with weight one on its
+edges and zero elsewhere. These passes use $O(g(|V|+|E|))$
+operations for $g$ sources, apart from rational arithmetic.
+Ignore groups with $M_g=0$.
+Give an optional edge labeled $g$ weight $1/M_g$ and every
+observed edge weight zero. On every path, each group contributes
+at most one, so the path's additive cost is at most $|S(P)|$.
+If $L$ is the minimum additive cost and $P_L$ attains it, then
+\[
+\lceil L\rceil \le r \le |S(P_L)|.
+\]
+The left inequality follows by minimizing a pointwise bound and
+rounding because $r$ is an integer. The right inequality comes
+from a concrete path. A candidate graph with no possible path
+can be recognized first by reachability.
+
+If $\lceil L\rceil>k$, the bound certifies the restoration in
+the stated model. If $|S(P_L)|\le k$, that witness disproves
+the guarantee. Otherwise use an exact algorithm. Keep, at
+each vertex, inclusion-minimal sets of source labels that reach
+it from $s$. Extend a set by taking its union with the label
+of the outgoing edge, then discard supersets. Removing a
+superset is safe because appending the same future labels
+preserves inclusion. Processing vertices in topological order
+yields the minimal sets at $t$, and their smallest cardinality
+is $r$. At most $2^g$ masks can occur when there are $g$ possible
+sources. For a decision at a fixed budget, sets exceeding that
+budget can be discarded early.
+
+The certificate makes it possible to separate proof obligations.
+The cheap lower bound rules out all admitted hidden paths. The
+upper bound supplies a path and the exact sources whose absence
+would enable it. A recovery team can then look for independent
+evidence about those sources or rebuild an internal artifact on
+the witness path, and repeat the check on the amended graph.
+The resulting sequence is an auditable search for a sufficient
+repair. It does not by itself minimize the total repair cost.
+
+\section{Remembering only sources that can recur}
+The full antichain can contain labels that will never influence
+a later choice. At a vertex $v$ on some suspect path, let $B(v)$ be
+the union of optional labels on all $s$-to-$v$ paths and let $A(v)$
+be the union on all $v$-to-$t$ paths. Call
+$L(v)=B(v)\cap A(v)$ the live labels. Two passes over a topological
+ordering compute these unions, ignoring vertices that cannot lie
+on an $s$-to-$t$ path.
+
+\begin{theorem}
+For a prefix $P$ ending at $v$, store its full cost $|S(P)|$ and
+retain only the mask $S(P)\cap L(v)$. At every vertex, keeping the
+lowest cost for each mask preserves the exact source radius.
+If $w=\max_v|L(v)|$, the algorithm processes at most
+$O(2^w(|V|+|E|))$ states and transitions, with one mask operation
+and a table update per transition up to a constant factor.
+\end{theorem}
+\begin{proof}
+Suppose $P$ ends at $u$ with mask $M$. Extend it along $u\to v$.
+Let $Q$ be the singleton optional label of that edge, or the empty
+set for an observed edge. For any edge on an $s$-to-$t$ path,
+$Q\subseteq A(u)$. Consequently $Q\cap S(P)=Q\cap M$, and
+the cost increments by $|Q\setminus M|$. Also
+$A(v)\subseteq A(u)$, since a suffix from $v$ can follow the edge
+from $u$. Any previously used label that belongs to $L(v)$ was
+therefore already in $M$. The next mask is
+$(M\cup Q)\cap L(v)$. The increment and next mask depend only
+on the current mask, so a larger cost with that mask can be
+discarded. Start at $s$ with the empty mask and cost zero.
+Induction over vertices gives the minimum prefix cost for each
+reachable mask. At $t$, the suffix has no edges and the mask
+is empty, so its stored cost is the radius. Each table has at
+most $2^w$ entries. Iterating over its outgoing edges yields
+the stated bound, excluding bit-set and table-operation costs.
+\end{proof}
+
+This bound is useful when sources are numerous but each records
+a localized portion of a dependency history. Consider a chain of
+$k$ diamonds. Within each diamond, its two branches are each
+two optional edges of one label. Each diamond uses two labels
+that occur nowhere else. At a branch vertex the live width is
+one, and at a join it is zero. The full antichain at the target
+contains all $2^k$ choices, each with one label from every
+diamond. The live-label algorithm stores one cost per vertex,
+for $3k+1$ states in total, and returns radius $k$.
+
+\section{Independent checks}
+An antichain solver and a second implementation enumerating
+activated sources agreed on all 256 seeded eight-vertex graphs.
+The additive lower and witness upper bounds agreed on 253.
+Counting edges gave an optimistic answer about source robustness
+on three graphs. The separate seven-edge chain gave source radius
+one and edge radius seven.
+
+To test harder instances, we used 256 ten-vertex graphs with
+five layers and seven possible sources. Every candidate path
+requires exactly four optional steps. Two solvers again agreed
+on all instances.
+\begin{center}
+\begin{tabular}{rrr}
+\toprule
+Exact source radius & Instances & Lower and upper bounds agree \\
+\midrule
+1 & 13 & 13 \\
+2 & 157 & 117 \\
+3 & 81 & 65 \\
+4 & 5 & 5 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The inexpensive certificate settled the exact radius in 200 of
+256 cases. The two bounds differed by one on 52 cases and by
+two on four. Using the edge radius four as the source radius
+would have overstated robustness on 251 cases. These counts
+describe the frozen graph generators and do not estimate real
+log failure frequencies. No timing speedup is claimed.
+
+The live-label solver matched direct enumeration of activated
+sources on 512 additional acyclic graphs, including 76 with
+no possible path. It matched enumeration on diamond chains
+of one through five stages. On the 64-stage chain it returned
+radius 64 using 193 states, against the analytic count of
+$2^{64}$ terminal antichain entries. The latter antichain was
+counted from the construction without materializing it.
+
+\section{Choosing source audits and artifact rebuilds}
+Some source groups can be audited independently. A successful audit
+must establish that the group conceals no optional dependency in
+the current graph. An audit that instead discovers an edge requires
+updating the graph before the certificate can be used. Likewise, a
+rebuild removes the artifact from suspect paths only if it excludes
+all suspect inputs. Give each available audit and rebuild a cost.
+
+Let $A$ be the selected audits and $R$ the selected rebuilds. A
+candidate path with at most $k$ distinct optional labels is an
+obligation. It is satisfied if its labels intersect $A$ or its
+internal artifacts intersect $R$. A path with neither available
+action cannot be certified away by these interventions.
+
+\begin{theorem}
+The selected audits and rebuilds rule out all hidden paths under
+omission budget $k$ if and only if they satisfy every obligation.
+For audit-only plans with all labels auditable, budget two reduces
+to weighted vertex cover after selecting the forced singleton
+labels. Even at live width zero, deciding whether the cost of a
+sufficient audit plan fits a budget is NP-hard.
+\end{theorem}
+\begin{proof}
+Remove the optional edges ruled out by the audits and the vertices
+blocked by the rebuilds. If an original path with at most $k$ labels
+survives, activate exactly its optional labels. This is a feasible
+omission and gives a witness against restoration. Conversely, every
+hidden path in the residual graph has at most $k$ labels and
+survives precisely when neither intervention hit it.
+
+With audits alone, a path with no optional labels makes the
+problem infeasible. At budget two, each singleton label is forced.
+Discard its satisfied obligations. Every remaining obligation has
+a pair of labels, so the remaining choice is a weighted vertex
+cover on the graph of these pairs. When this graph is bipartite,
+a minimum cut gives the optimum. Connect the source to left
+vertices and right vertices to the sink with their respective
+audit costs. Connect each adjacent left and right pair with capacity
+greater than the total available cost. An affordable cut chooses a
+left endpoint on the sink side or a right endpoint on the source
+side of each pair.
+
+For the hardness claim, reduce ordinary vertex cover \cite{karp}.
+Make a label for each vertex. For each graph edge use a separate
+two-arc route from $s$ to $t$ whose two labels are its endpoints.
+All such paths have two labels. No branch repeats its first label,
+so every live set is empty. At budget two the audit plan must
+cover exactly the original edges.
+\end{proof}
+
+An exact optimizer can find one residual witness, branch on every
+eligible audit or rebuild that hits it, and retain the cheapest
+valid completion. The live-label solver with predecessor pointers
+can supply the witness. A witness with no eligible actions closes
+that branch as infeasible. This separates the cost of finding one
+counterexample from the cost of choosing the intervention set.
+For an audit-only plan with at most $b$ interventions, each branch
+has at most $k$ children and depth at most $b$.
+
+As a small example, two suspect routes depend on source one and
+a third depends on source two. Their distinct intermediate
+artifacts cost $2,2,1$ to rebuild. The audits cost $1$ and $4$.
+Auditing source one and rebuilding the third artifact costs $2$.
+Using either intervention type alone costs $5$. The witness
+solver matched full intervention and omission enumeration on 192
+seeded graphs, and matched weighted vertex cover on 48 additional
+zero-width fixtures. These are checks of the declared graph model.
+A recovery team can use the mixed plan when an independent audit
+is cheaper than rebuilding several artifacts. The certificate must
+record what the audit established about coverage.
+
+\newpage
+\section{What a recovery drill should measure}
+Record source-level outage groups and keep the label meaning
+stable across tools. Inject a known complete log into a recovery
+drill, withhold selected records or whole sources, and require
+the team to propose a restoration before seeing the hidden
+graph. Then test whether the actual hidden graph fits the
+candidate family, whether the claimed budget held, and whether
+the selected artifacts still receive taint. Measure unnecessary
+rebuilds, time to safe service, and residual taint separately.
+If common infrastructure can hide several sources together,
+represent that shared failure in the budget model before using
+the certificate.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{broersma} Hajo Broersma, Xueliang Li, Gerhard J.
+Woeginger, and Shenggui Zhang.
+\emph{Paths and Cycles in Colored Graphs}.
+Australasian Journal of Combinatorics 31, 299--311, 2005.
+\url{https://ajc.maths.uq.edu.au/pdf/31/ajc_v31_p299.pdf}.
+\bibitem{karp} Richard M. Karp.
+\emph{Reducibility Among Combinatorial Problems}.
+Complexity of Computer Computations, 1972.
+\url{https://www.cs.umd.edu/~gasarch/BLOGPAPERS/Karp.pdf}.
+\end{thebibliography}
+\end{document}

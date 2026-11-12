@@ -1,0 +1,341 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Minimax Audit Allocation for Paired Forecast Evaluation}}
+\newtheorem{proposition}{Proposition}
+\title{Minimax Audit Allocation for Paired Forecast Evaluation}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+If a training policy can influence which predictions are checked, it
+can obtain a lower grading loss by making errors harder to observe.
+We derive an inverse-probability correction for squared scoring and
+exhibit a false certainty that wins under naive grading. A finite
+audit verifies 243 scoring identities. For paired comparisons of
+fixed forecasts, we derive a minimax audit design under an expected
+budget and minimum stratum coverage. It uses only bounds on each
+stratum's outcome probability and keeps the paired score unbiased
+when the bounds are inaccurate. The bounds govern the variance
+claim, and independent audit randomization governs unbiasedness.
+For a fixed finite cohort, a separate design uses an exact integer
+allocation to meet a hard slot limit on every draw. When the
+possible outcome counts are coupled across strata, we show how
+randomizing the allocation can further reduce worst-case variance.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} How should an evaluator spend limited audits when
+comparing an original forecast with a correction?
+\paragraph{Finding.} An independently randomized audit gives an unbiased
+paired score. With interval uncertainty about binary outcomes, a minimax
+baseline and clipped square-root allocation reduce the worst-case
+variance added by auditing.
+\paragraph{Evidence and scope.} The design is proved and checked
+by exact enumeration. It supports evaluation on fixed forecasts and keeps
+a positive audit rate for each stratum. The variance guarantee depends
+on the outcome intervals. A separate finite-cohort design enforces a hard
+slot limit.
+\section{A protected way to say I might be wrong}
+Suppose an assistant predicts whether its intervention will help.
+After a correction or new evidence, the training process should
+reward updating the prediction and repairing any effect. This
+requires learning from uncomfortable outcomes. When the assistant
+can close an appeal, omit a follow-up invitation, or convince a
+grader to skip a check, observed loss can fall while accuracy falls.
+
+Use the squared score $L(q,Y)=(q-Y)^2$ for report $q\in[0,1]$
+and binary outcome $Y$. Proper scores elicit probabilities
+through expected score optimization \cite{gneiting}. For a true
+conditional probability $p$ the loss decomposes as
+\[
+ E[L(q,Y)]=p(1-p)+(q-p)^2.
+\]
+In a toy population with $p=1/2$, a truthful report has loss
+$1/4$. If it is checked with probability one while a report of
+certainty is checked with probability $1/4$, scoring unchecked
+cases as zero makes false certainty cost $1/8$. The training
+objective then favors the wrong report.
+
+\section{An audit correction}
+\begin{proposition}
+Let $A$ indicate an audit. If
+$\Pr(A=1\mid q,Y)=\pi(q,Y)>0$ is known on the support, then
+$E[A L(q,Y)/\pi(q,Y)]=E[L(q,Y)]$. Minimizing this expected
+weighted score again uniquely elicits $p$ under the stated model.
+\end{proposition}
+\begin{proof}
+Condition on $q$ and $Y$. The squared loss is fixed and the
+conditional expectation of $A/\pi(q,Y)$ is one. Taking
+expectations restores the ordinary loss. The quadratic
+decomposition shows uniqueness. An audit independent of the
+outcome given $q$ permits using $\pi(q)$.
+\end{proof}
+
+\section{Allocating audits for a fixed paired comparison}
+Freeze an original and a revised forecast on every example
+before drawing independent audits. Write $D$ for revised minus
+original squared loss. The paired score is
+\[
+ D=(q_{\rm new}-q_{\rm old})(q_{\rm new}+q_{\rm old}-2Y).
+\]
+Consider strata $i$ with weights $w_i$, unit audit costs $c_i>0$,
+and known positive audit probabilities $\pi_i$ set by the
+evaluator before seeing the outcome. Within stratum $i$ let
+the score difference be $D_0,D_1$ at the two outcomes. This
+requires the forecast pair to be fixed within the stratum.
+For a fixed baseline $m_i$, use
+\[
+ \widehat D=m_i+\frac{A}{\pi_i}(D-m_i).
+\]
+Given the full case, its conditional expectation is $D$.
+Its variance added by audit randomization, averaged over cases,
+is
+\[
+ \sum_i w_i(\pi_i^{-1}-1)
+       \mathbb E[(D-m_i)^2\mid i].
+\]
+This follows by evaluating the variance of the Bernoulli
+multiplier conditional on the full case. It separates the noise
+introduced by auditing from the variance of the complete-data
+score. Residual-based allocation has a close counterpart in
+two-phase sampling designs \cite{chen}.
+
+\begin{proposition}
+Suppose the success probability in each stratum can vary
+independently over a specified interval $[\ell_i,u_i]$.
+Let $p_i^*$ be $1/2$ clamped to that interval and choose
+$m_i=(1-p_i^*)D_0+p_i^*D_1$. The worst-case conditional
+residual second moment at this choice, and its minimum over
+baselines, is
+\[
+ r_i=(D_1-D_0)^2p_i^*(1-p_i^*).
+\]
+Under the expected audit budget $\sum_i w_ic_i\pi_i\le B$
+and floors $0<f_i\le\pi_i\le1$, assume
+$B\ge\sum_i w_ic_if_i$. A minimax design for the
+added variance chooses
+\[
+ \pi_i=\operatorname{clip}_{[f_i,1]}
+       \sqrt{\frac{r_i}{\lambda c_i}}.
+\]
+When the budget binds, choose $\lambda>0$ to use it.
+Zero-residual strata can stay at the floor. If all positive
+residual strata can be fully audited, the remaining budget
+need not be spent.
+\end{proposition}
+\begin{proof}
+For any baseline the worst residual second moment is at
+least its value at $p_i^*$, which is minimized by the mean
+under $p_i^*$. At that baseline, the residual moment as a
+function of $p$ has slope $(D_1-D_0)^2(1-2p_i^*)$. It
+therefore reaches its maximum over the interval at $p_i^*$,
+or is constant. This proves the minimax residual formula.
+The rectangular uncertainty set lets the worst cases occur
+together. The remaining design minimizes
+$\sum_i w_ir_i/\pi_i$ up to an additive constant. For a
+fixed positive multiplier $\lambda$, minimize
+$r_i/\pi_i+\lambda c_i\pi_i$ independently in each stratum.
+The clipped square root is its minimum. If its total cost
+equals the budget, the multiplier inequality proves global
+optimality. The minimum-budget endpoint follows by putting
+every stratum at its floor.
+\end{proof}
+
+For two equal-mass, equal-cost strata with forecast gaps
+$1/4$ and $3/4$, let both probability intervals contain
+$1/2$, use a floor of $1/5$, and permit one audit per two
+cases in expectation. The allocation is $(1/4,3/4)$.
+The worst-case added variance falls from $5/16$ under
+uniform auditing to $3/16$. The finite audit compared
+6,375 baseline candidates, 2,250 direct variance evaluations,
+and 6,848 allocation comparisons on declared rational grids.
+This design controls the expected number of audits. A reviewer
+with a hard daily limit needs a different sampling design.
+
+\section{Paired evaluation with a hard slot limit}
+Suppose stratum $i$ has $N_i$ fixed cases and target weight $w_i$.
+The outcome count lies in an integer interval $[\ell_i,u_i]$ and
+the paired forecast is fixed within the stratum. Choose an integer
+sample size $k_i$ before observing any outcomes. Draw $k_i$
+uniformly without replacement in stratum $i$, independently
+across strata conditional on the allocation. With positive
+integer floors and equal slot costs, let $B$ be the largest
+permitted sum of the sample sizes. Assume the floors fit that
+budget.
+
+The estimator is the weighted sum of the sampled stratum means
+of $D$. It is unbiased for the corresponding full-cohort mean,
+even if the outcome count interval is inaccurate. Subtracting a
+constant baseline before taking a stratum mean and then adding
+it back has no effect. If the true outcome count is $P_i$ and
+$N_i>1$, the finite-population score variance is
+\[
+ S_i^2=\frac{N_i}{N_i-1}(D_1-D_0)^2
+       \frac{P_i}{N_i}\left(1-\frac{P_i}{N_i}\right).
+\]
+Set $S_i^2=0$ for a singleton. The estimator's design variance is
+\[
+ \sum_i w_i^2 S_i^2\left(\frac{1}{k_i}-\frac{1}{N_i}\right).
+\]
+Indeed, two distinct sample positions in a stratum have covariance
+$-S_i^2/N_i$, while each has variance $(N_i-1)S_i^2/N_i$.
+Expanding the variance of the sample mean gives the expression.
+
+\begin{proposition}
+Under independently varying outcome counts in the specified intervals,
+choose a count nearest $N_i/2$ in each interval and let $a_i$ denote
+$w_i^2 S_i^2$ at that count. Start at the required floors. Allocate
+each remaining slot to an uncapped stratum with largest
+$a_i/[k_i(k_i+1)]$. The result minimizes worst-case design variance
+among outcome-blind allocations using these sampling and estimation
+rules, including randomized allocations.
+\end{proposition}
+\begin{proof}
+The nearest count maximizes $P_i(N_i-P_i)$ and therefore the
+variance contribution for every allowed $k_i$. Rectangular
+uncertainty makes these choices simultaneous. The reduction
+from one additional slot is exactly $a_i/[k_i(k_i+1)]$, which
+decreases as the count grows. Taking the largest available
+reduction at each step selects the largest reductions in prefix
+order and minimizes the remaining variance. If there are more
+slots than cases, stop at full coverage. For a randomized
+allocation, conditional expectation is the same full-cohort
+score at every draw. The worst-case variance is the average of
+the worst-case deterministic costs because the same outcome
+counts maximize each of them. A mixture cannot improve on the
+smallest such cost.
+\end{proof}
+
+Take two twenty-case strata with equal weights and forecast
+gaps $1/4$ and $3/4$. Allow all outcome counts, require four
+reviews per stratum, and cap the total at 20. The optimum
+uses $(5,15)$ slots and has worst-case design variance $3/608$.
+Equal allocation uses $(10,10)$ and gives $5/608$. These are
+variances of the finite-cohort mean under a hard cap. The earlier
+expected-budget example reports a per-case added variance and
+uses a different design. The verifier enumerated samples in
+168 finite count settings and compared 9,828 feasible integer
+allocations across 256 seeded designs. If the same forecasts
+change after seeing outcomes or the audit counts adapt to those
+outcomes, this argument does not establish unbiasedness.
+
+\section{When count uncertainty is coupled}
+Separate intervals allow all high-variance strata to occur
+together. Suppose instead that prior evidence supplies a finite
+family of joint count scenarios. Let $a_i^j$ be the variance
+coefficient in stratum $i$ for scenario $j$, and let
+\[
+ L_j(k)=\sum_i a_i^j(1/k_i-1/N_i).
+\]
+Write $\mathcal K$ for all allocations that respect the floors
+and the slot cap. An evaluator can draw $k\in\mathcal K$ before
+seeing outcomes, then sample independently within the strata.
+
+\begin{proposition}
+For any finite joint scenario family, the minimax variance over
+such randomized allocations equals
+\[
+ \max_{\lambda\in\Delta}\ 
+     \min_{k\in\mathcal K}
+       \sum_i \left(\sum_j \lambda_j a_i^j\right)
+                     (1/k_i-1/N_i),
+\]
+where $\Delta$ is the simplex over scenarios. The inner minimum
+uses the same greedy slot rule with averaged coefficients.
+\end{proposition}
+\begin{proof}
+The conditional mean of the estimator is the full-cohort mean
+for every allowed allocation. For each scenario, its variance
+under a randomized allocation is therefore the average of
+$L_j(k)$. The finite zero-sum game with rows $k$ and columns
+$j$ gives the displayed expression by minimax duality. The
+average loss for a fixed $\lambda$ is separable, so the
+decreasing marginal reductions give the inner optimum.
+\end{proof}
+
+A dual mixture gives a lower certificate by this greedy
+calculation. A distribution over feasible allocations gives
+an upper certificate by evaluating all named scenarios.
+The two bounds can coincide even when a single allocation
+that minimizes the average loss under the dual mixture fails
+to attain the guarantee against each scenario.
+
+For example, take two four-case strata with weights $1/2$,
+score gaps one, and counts either $(2,0)$ or $(0,2)$. Review
+three cases with a floor of one per stratum. The first scenario
+has coefficients $(1/12,0)$, and the second has their reverse.
+Either fixed allocation has worst-case variance $1/16$.
+Randomize equally between $(1,2)$ and $(2,1)$ to give
+variance $1/24$ in both scenarios. The equal dual mixture
+proves optimality. If $(1,1)$ is also possible as an outcome
+count, both allocations have variance $1/16$ in that third
+scenario and the gain disappears. On 192 exact two-scenario
+fixtures, the primal and dual optima agreed. Mixing strictly
+improved on a fixed allocation in 20 of them.
+
+This design is useful when failures in two release-check strata
+are believed to be mutually exclusive and review capacity is
+fixed. The variance claim requires evidence for the joint
+count family. A randomized allocation still respects the
+daily slot cap and preserves the outcome-blind audit design.
+
+\section{Training with a live repair channel}
+Choose audit eligibility and randomization outside the trained
+policy. Preserve an independent route for people to challenge an
+answer. Record the original forecast, known selection probability,
+subsequent evidence and the repair attempt. Score the revision
+on new evidence with a timestamp rather than letting the model
+rewrite its original estimate. Penalize suppressing the correction
+channel through a separate permission check. Do not require a
+distressed person to report every error to make the pipeline work.
+
+Small propensities cause large weights and unstable gradients.
+Prefer a minimum audit probability and independently adjudicate
+severe outcomes. If no audit can observe a group, inverse weighting
+cannot repair the missing support. If model reports change the
+outcomes themselves, the probability being elicited must be defined
+under an intervention or fixed decision policy.
+For a release evaluation, lock both forecasts and the audit
+policy before collecting the labels. Use the same audit for
+both forecasts. Choosing the forecasts in response to the
+audit results would change the statistical comparison.
+
+\newpage
+\section{Finite check}
+For each of nine forecast values and nine true probabilities
+the experiment compares the expanded squared loss and the
+quadratic identity. For each of three positive audit rates it
+independently averages over both outcome values. All 243 weighted
+identities hold. The false-certainty example gives an exact
+training failure. A prospective experiment should measure both
+calibration and whether genuine corrections remain easy to file.
+\section{Finite-sample grading experiment}
+We fitted a report in increments of 0.05 for each of 128
+independent cohorts. Each training panel held 320 Bernoulli
+outcomes with true probability one half. Reports above one half
+had audit probability 0.2, and other reports had probability one.
+Both arms used the same outcome and visibility uniforms. One
+minimized observed squared loss with unchecked cases counted as
+zero. The other used the known inverse propensity. Mean reports
+were 0.55664 and 0.53125, respectively. Mean held-out Brier losses
+over separate 400-case panels were 0.253414 and 0.252453.
+The weighting reduced the observed bias and did not eliminate it.
+Finite-sample minimization across different report-specific audit
+sets still favors some optimistic fits.
+
+\paragraph{Review status.} Independent manuscript review and a language-model study remain open.
+
+\begin{thebibliography}{9}
+\bibitem{gneiting} Tilmann Gneiting and Adrian E. Raftery.
+\emph{Strictly Proper Scoring Rules, Prediction, and Estimation}.
+\emph{Journal of the American Statistical Association} 102(477), 359--378, 2007.
+\url{https://sites.stat.washington.edu/raftery/Research/PDF/Gneiting2007jasa.pdf}.
+\bibitem{chen} Tong Chen and Thomas Lumley.
+Optimal Sampling for Design-Based Estimators of Regression Models.
+\emph{Statistics in Medicine} 41(8), 1482--1497, 2022.
+\url{https://arxiv.org/abs/2106.08530}.
+\end{thebibliography}
+\end{document}

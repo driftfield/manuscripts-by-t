@@ -1,0 +1,498 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Sequential Harm Audits Under Selective Reporting}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\title{Sequential Harm Audits Under Selective Reporting}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+Incident reports about an agent intervention may arrive more often
+when the intervention causes harm. A sequential test can then raise
+false alarms even when each underlying case is distinct.
+We derive a sharp adjustment for a bounded ratio of reporting
+probabilities and prove anytime validity with adaptive case histories.
+We also give a rule for using a time-uniform upper bound learned
+from calibration while preserving past report evidence. Exact
+finite experiments compare the adjustments with naive monitoring
+and independent audits. A paired construction shows which changes
+in underlying harm remain unidentified from reports.
+An independent audit top-up gives a sharp reduction in the
+reporting-ratio bound when cases are deduplicated. When the full case
+count is independently observed, a second test is valid even with
+unbounded reporting bias. Keeping audit and report outcomes separate
+also gives an exact log-optimal factor for a specified alternative.
+We compare when these tests detect harm.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} How can an operator decide when to intervene if
+users report harms selectively?
+\paragraph{Finding.} A conditional reporting-ratio cap gives an anytime
+harm test. An upper bound learned with simultaneous calibration coverage
+adds only its coverage error to the crossing bound. A pooled reporting
+ratio may fail under predictable context shifts.
+\paragraph{Evidence and scope.} The guarantees are proved and
+checked with exact crossing calculations and observationally identical
+counterexamples. The operator needs a bound for the cases on which the
+monitor bets and an independent route for individual appeals.
+
+\section{The harm rate before a case is reported}
+Suppose a scheduling agent changes appointments on behalf of
+its users. Some users report disruptions and others never contact
+the service. The operator wants to intervene if the underlying
+harm rate exceeds a reference value $p_0$, even when evidence
+arrives slowly enough to make a fixed sample size impractical.
+Merging duplicate reports is necessary for this question. It
+still leaves the selection of which cases are reported.
+
+Let $X_t\in\{0,1\}$ denote harm in case $t$ and
+$A_t\in\{0,1\}$ indicate whether its outcome enters the audit.
+The observed outcome is either omitted, admitted clean, or admitted
+harmful. The history $\mathcal F_{t-1}$ includes information available
+when the monitor sets its next betting factor. We consider the
+conditional null $\Pr(X_t=1\mid\mathcal F_{t-1})\le p_0$.
+The selection model permits different admission probabilities
+for harmful and clean cases, with ratio at most $\rho$ at each history.
+
+The main result separates two choices an operator can make.
+The reference rate $p_0$ expresses a tolerance for underlying harm.
+The reporting ratio $\rho$ reflects the audit's observation process.
+This response probability ratio is a sensitivity parameter for
+outcome-dependent observation. Smith and VanderWeele \cite{smith}
+bound causal risk-ratio distortion under selection. Here we use
+a conditional reporting ratio to construct a sequential test,
+with a nonnegative supermartingale as in time-uniform inference
+\cite{howard}.
+
+\section{A sharp conditional reporting bound}
+\begin{theorem}
+Let $0<p_0<1$ and $1\le\rho<\infty$. At every history let
+$a_x=\Pr(A_t=1\mid X_t=x,\mathcal F_{t-1})$, with
+$a_1\le\rho a_0$. Set
+\[
+q=\frac{\rho p_0}{1-p_0+\rho p_0}.
+\]
+When $\Pr(A_t=1\mid\mathcal F_{t-1})>0$, the admitted
+harm probability is at most $q$ under the conditional null.
+Let $b_t$ be any predictable value in $[q,1]$. Start with $M_0=1$
+and multiply by $1$ on omission, by $b_t/q$ on admitted harm,
+and by $(1-b_t)/(1-q)$ on admitted clean outcomes.
+For any $0<\alpha<1$,
+\[
+\Pr\!\left(\exists t\ge0:\ M_t\ge 1/\alpha\right)\le\alpha .
+\]
+The bound $q$ on admitted harm is sharp.
+\end{theorem}
+\begin{proof}
+Fix a history and write $p=\Pr(X_t=1\mid\mathcal F_{t-1})$.
+At histories with positive admission, Bayes' rule gives
+\[
+\Pr(X_t=1\mid A_t=1,\mathcal F_{t-1})
+ =\frac{p a_1}{p a_1+(1-p)a_0}
+ \le \frac{\rho p}{1-p+\rho p}
+ \le q .
+\]
+The odds of harm have been multiplied by at most $\rho$.
+Positive admission under the null implies $a_0>0$, since
+$a_0=0$ forces $a_1=0$ by assumption. Null conditional events
+can be assigned arbitrary consistent versions of $a_x$.
+
+Write $r$ for the admitted harm probability. The mean factor
+on admission is
+\[
+r\,\frac{b_t}{q}+(1-r)\frac{1-b_t}{1-q}
+ =1+(r-q)\frac{b_t-q}{q(1-q)}\le1 .
+\]
+Omissions contribute factor one, so $M_t$ is a nonnegative
+supermartingale. Stop it at its first crossing or a fixed finite
+horizon. Its expected stopped value is at most one, while on
+crossing its value is at least $1/\alpha$. Letting the horizon
+increase gives the result. For sharpness, take $p=p_0$,
+$a_1=1$ and $a_0=1/\rho$.
+\end{proof}
+
+The factor can use a history-dependent bet without changing the
+argument. A large $\rho$ brings $q$ close to one and makes
+successive harmful reports weak evidence. A process that learns
+how strongly to bet may improve power, but it still needs an
+externally justified upper bound on selection. The rate $q$ can
+also vary predictably with the case class when the reference
+rate and reporting bound are specified conditionally.
+
+\section{Reducing selection bias with independent audit draws}
+Let $R$ indicate an adjudicated spontaneous report. Before using
+any current-case evidence, choose an audit probability $s$ from
+the past history. Select the audit with probability $s$ independently
+of both the harm and the report, conditional on that history.
+Admit a case if either route provides the outcome. If both routes
+apply, record it once. An audit assignment can reuse an already
+adjudicated outcome. This requires comparable outcome definitions
+on both routes.
+
+\begin{proposition}
+If spontaneous reporting satisfies $a_1\le\rho a_0$, the
+combined admission probabilities satisfy the sharp ratio bound
+\[
+\rho_{\rm pool}=\frac{\rho}{1+s(\rho-1)}.
+\]
+With no finite spontaneous reporting bound and $s>0$, the
+sharp combined ratio bound is $1/s$.
+\end{proposition}
+\begin{proof}
+The combined probability for outcome $x$ is $s+(1-s)a_x$.
+For fixed $a_0$, the largest numerator uses
+$a_1=\min(1,\rho a_0)$. Up to $a_0=1/\rho$, the ratio is
+nondecreasing in $a_0$. Beyond that point the numerator is one,
+and the ratio is nonincreasing. The maximum is attained at
+$(a_0,a_1)=(1/\rho,1)$. With unrestricted reporting the
+largest numerator is one and the smallest denominator is $s$,
+attained by $(0,1)$.
+\end{proof}
+
+Use $\rho_{\rm pool}$ in the conditional harm bound at each
+history. For $\rho>1$, a target combined ratio $r\in[1,\rho]$
+requires $s\ge(\rho/r-1)/(\rho-1)$. The expected number
+of additional adjudications is $s\Pr(R=0)$ per opportunity if
+already reported cases have a usable label. A draw concentrated
+on already suspected harms needs a different observation model.
+Combining two routes for one case does not create two independent
+outcomes.
+
+The verifier compared 4,514 grid ratios, with a sharp case
+for each of 36 settings of $\rho$ and $s$. For the existing
+ratio-three example, set $s=1/4$, giving a combined ratio of
+two. Over 48 opportunities with threshold eight, use the same
+harm alternative $4/5$ to set a fixed bet for each observation
+rule. The resulting crossing probabilities are
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Observation rule & Null at $1/2$ & Alternative at $4/5$ \\
+\midrule
+Spontaneous reports & 0.0888 & 0.9013 \\
+Deduplicated pool & 0.0958 & 0.9543 \\
+Independent assignments only & 0.0606 & 0.6469 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The pooled and assignment-only rules use the same random
+assignments. The pool expects four extra adjudications on
+unreported cases under the null and $8/5$ under the alternative.
+These are model-based costs and crossing probabilities for
+the stipulated reporting laws.
+
+\section{Using all enumerated opportunities}
+Suppose the monitor observes every eligible case even when neither
+route provides a label. Let $Y=1$ mean that an adjudicated harmful
+outcome entered the audit and let $Y=0$ for all other cases. Since
+$Y\le X$, the conditional null also bounds $\Pr(Y=1)$ by $p_0$.
+This gives a valid betting factor for any predictable $d\in[p_0,1]$,
+using $d/p_0$ on $Y=1$ and $(1-d)/(1-p_0)$ otherwise.
+It requires a complete case count and no false harmful labels.
+It uses omissions as evidence about the detected harm rate.
+If reporting suppresses so many harms that this rate remains
+below $p_0$, it cannot provide the intended power.
+
+The monitor can also retain the route by which it obtained each
+label. With audit probability $s$ and spontaneous reporting
+probabilities $r_0,r_1$, there are five outcomes. They are audited
+harm, audited clean, unaudited reported harm, unaudited reported
+clean, and omission. Their probabilities are
+\[
+ \bigl(sp,\ s(1-p),\ (1-s)pr_1,\ (1-s)(1-p)r_0,\
+ (1-s)[p(1-r_1)+(1-p)(1-r_0)]\bigr).
+\]
+An independently assigned audit supplies a usable label in this
+model. Count each case on exactly one route.
+
+\begin{proposition}
+For known $s$ and finite $\rho\ge1$, a nonnegative five-outcome
+factor has conditional expectation at most one for every null law
+with $p\le p_0$ and $r_1\le\rho r_0$ exactly when it passes that
+check at $p\in\{0,p_0\}$ and
+\[
+ (r_0,r_1)\in\{(0,0),(1,0),(1,1),(1/\rho,1)\}.
+\]
+\end{proposition}
+\begin{proof}
+For fixed reporting probabilities the expectation is affine in
+$p$, so its maximum is at one endpoint. At each endpoint it is
+linear on the reporting polygon $0\le r_0,r_1\le1$,
+$r_1\le\rho r_0$. The listed points are the vertices, with a
+repeat when $\rho=1$. Every vertex law is allowed by the null.
+\end{proof}
+
+For example, use the ordinary harm threshold in the assigned
+branch and the report-adjusted threshold in the unassigned branch.
+The five-outcome check certifies this rule and allows other factors
+that use the route information. The verifier checked 1,152
+conditional expectations for denominator, pooled and route-specific
+factors at the extreme null laws.
+
+For the denominator and pooled rules, a fixed weighted average
+of their wealth processes is also a nonnegative supermartingale.
+The same anytime threshold applies to that average. It shares
+evidence across the two rules without treating their outcomes as
+independent. The following exact comparison uses equal weights,
+24 opportunities, threshold eight, $s=1/4$, and $\rho=3$.
+The denominator bet is $d=4/5$ and the pooled bet is $8/9$.
+The null uses $p=1/2$ with $(r_0,r_1)=(1/3,1)$. Both
+alternatives use $p=4/5$, with reporting pairs $(1/3,1)$
+and $(1/10,3/10)$ respectively.
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Case law & Denominator & Pooled & Equal mixture \\
+\midrule
+Null & 0.0826 & 0.0730 & 0.0788 \\
+All harms reported & 0.8978 & 0.7945 & 0.8999 \\
+Sparse reports & 0.0144 & 0.2970 & 0.1545 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The mixture gives up power relative to the pooled rule in the
+sparse fixture. A service can choose the mix before evaluating
+the live stream, using separate evidence about how complete its
+case and reporting records are. Exact path enumeration agreed
+with the crossing recursion on nine short runs.
+
+\section{Exact finite comparison}
+We computed first-crossing probabilities for 48 opportunities,
+threshold eight, and independent opportunities within each fixture.
+The naive process uses $q=1/2$ and $b=3/4$. The adjusted process
+uses $q=3/4$ and $b=7/8$. The independent audit selects each case
+with probability $2/3$ and applies the $1/2$ reference. In the
+primary null the expected sample size matches that of admitting
+all harmful cases and one third of clean cases.
+
+\begin{center}
+\begin{tabular}{llrr}
+\toprule
+Selection & Monitor & $p=1/2$ & $p=4/5$ \\
+\midrule
+Ratio $3$ & Naive & 0.8809 & 1.0000 \\
+Ratio $3$ & Adjusted & 0.0620 & 0.9188 \\
+Ratio $4$ & Adjusted using $3$ & 0.1528 & 0.9672 \\
+Independent audit & $1/2$ reference & 0.0919 & 0.9659 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Table entries are rounded from exact rationals. The algorithm
+propagates surviving probability mass over pairs $(h,c)$ of admitted
+harmful and clean counts. On each transition it removes mass when
+$(b/q)^h((1-b)/(1-q))^c\ge8$. The omitted transition leaves the
+pair unchanged. The verifier checks conservation of mass and
+compares a seven-step case with independent enumeration of all
+$3^7$ paths. The ratio-four condition intentionally violates the
+assumed bound. Its null crossing probability exceeds $1/8$ in
+this finite experiment. Under the specified alternative and the
+primary selection model, the corrected monitor crosses in about
+$92\%$ of cases. This power belongs to that fixture.
+
+\section{An identification limit}
+\begin{proposition}
+A known upper bound $\rho=3$ on the response probability ratio
+does not generally identify whether the underlying harm rate
+exceeds $1/2$. This remains true when harms are at least as likely
+to be reported as clean outcomes.
+\end{proposition}
+\begin{proof}
+In the null world take $(p,a_1,a_0)=(1/2,3/5,3/10)$.
+In the alternative take $(3/5,1/2,3/8)$. Each world has an
+admitted harm with probability $3/10$, an admitted clean
+outcome with probability $3/20$, and an omission with probability
+$11/20$. Both satisfy $1\le a_1/a_0\le3$.
+Repeating each world independently gives identical laws for all
+observed histories. Consequently any test based on those histories
+has identical crossing probabilities in the two worlds.
+\end{proof}
+
+\section{Learning an upper bound without restarting the monitor}
+Suppose a fixed $\rho_\star$ bounds the conditional reporting
+ratio at all histories, but its value is unknown. Write
+$q(\rho)=\rho p_0/(1-p_0+\rho p_0)$ and $q(+\infty)=1$.
+Use a predictable coefficient $\lambda_t\in[0,1]$, chosen
+once at each time for all candidate ratios. For a candidate
+$\rho$, let $E_t(\rho)$ be the product of factors
+\[
+ 1\quad\text{on omission},\qquad
+ 1+\lambda_t(X_t-q(\rho))\quad\text{on admission}.
+\]
+These factors are nonnegative and decrease with $\rho$
+on every realized path. For $\rho_\star$, the conditional
+mean factor on admission is at most one, so
+$E_t(\rho_\star)$ is a nonnegative supermartingale under the
+null. Keep the historical coefficients fixed when evaluating a
+new candidate ratio.
+
+\begin{theorem}
+Let calibration produce upper bounds $U_t\ge1$ with
+$\Pr(\exists t:U_t<\rho_\star)\le\beta$. Then stopping when
+$E_t(U_t)\ge1/\alpha$ has null crossing probability at most
+$\alpha+\beta$.
+\end{theorem}
+\begin{proof}
+On the event of simultaneous calibration coverage, pathwise
+monotonicity gives $E_t(U_t)\le E_t(\rho_\star)$ for all $t$.
+On that event, crossing by the calibrated process implies
+crossing by the fixed-ratio process, which has probability at
+most $\alpha$. Add the probability at most $\beta$ that the
+upper bound ever fails. The argument needs no independence
+between the two processes when the conditional null and
+ratio bound hold in the monitor's full pre-case filtration.
+The guarantee comes from comparison with $E_t(\rho_\star)$.
+The plug-in process itself need not be a supermartingale.
+\end{proof}
+
+For example, with fixed reporting probabilities $a_0,a_1$,
+representative independent audit samples within each outcome
+stratum can give a simultaneous upper bound. After $n$ audited
+cases in a stratum, use one-sided Hoeffding radius
+\[
+ d_n=\sqrt{\frac{\log(2n(n+1)/\beta)}{2n}}.
+\]
+Take the lower endpoint for $a_0$ and the upper endpoint for
+$a_1$, clipped to the unit interval. Their respective error
+probabilities are each at most $\beta/(2n(n+1))$. Summing over
+both strata and every $n$ gives total probability at most
+$\beta$. Divide the upper endpoint by the lower one, flooring
+the result at one and using $+\infty$ when the lower endpoint
+is zero or a stratum is missing. The resulting upper bound
+can be reevaluated as audits arrive. A narrower interval does
+not justify changing the coefficients of earlier bets.
+
+\paragraph{A pooled calibration can fail.}
+Let two observed contexts be equally common, with harm
+probability $1/2$ in both. Their $(a_0,a_1)$ pairs are
+$(1/4,1)$ and $(3/4,0)$. Pooled reporting probabilities are
+equal, yet the first context has ratio four. A monitor that
+bets only in that context, uses ratio one, and sets
+$\lambda_t=1$ has conditional mean factor $19/16$ under
+the null there. An upper bound on a pooled reporting ratio
+cannot replace a bound at histories where the monitor bets.
+
+\section{An exact calibration experiment}
+In a finite two-point model, the clean reporting probability
+is $1/4$ and the true ratio is one or three. Before opportunity
+four, use $U_t=3$. At that opportunity reveal the reporting
+indicators from two independently adjudicated harmful cases.
+Lower $U_t$ to one for the remaining decisions only if both
+were unreported. At true ratio three, this happens with
+probability $1/16$, which bounds simultaneous undercoverage
+in this experiment. Calibration therefore spends two extra
+known-harm audits. We use coefficient one and threshold eight
+over 40 opportunities. The theorem's error allowance is
+$1/8+1/16=3/16$.
+
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+True setting & Fixed upper three & Calibrated & Known ratio & Naive ratio one\\
+\midrule
+Null, ratio one & 0.0005 & 0.0232 & 0.0408 & 0.0408\\
+Null, ratio three & 0.0797 & 0.1205 & 0.0797 & 0.7324\\
+Alternative, ratio one & 0.0608 & 0.3241 & 0.5289 & 0.5289\\
+Alternative, ratio three & 0.7605 & 0.7754 & 0.7605 & 0.9997\\
+\bottomrule
+\end{tabular}
+\end{center}
+The alternative is $p=4/5$. Entries are rounded exact
+first-crossing probabilities. At true ratio one, calibration
+recovers part of the power lost by always using three. At
+ratio three, occasional undercoverage raises the null crossing
+probability relative to knowing the true ratio. These operating
+points belong to the declared two-point model. The calculation
+agrees with 8,748 six-step path evaluations across twelve
+oracle settings. The full receipt retains the exact values.
+
+\section{A factor tuned to sparse reporting}
+A monitor that retains the observation route can target a specified
+alternative. Let $Q$ be its strictly positive five-outcome law, and
+let $P^*$ be a strictly positive mixture of admissible null laws.
+Consider the candidate factor $e^*(i)=Q_i/P_i^*$. If its mean is
+at most one at each null vertex, it is valid and has the largest
+expected log factor under $Q$ among all valid factors. This is
+the finite form of the reverse information projection construction
+of Larsson, Ramdas, and Ruf \cite{larsson}. Indeed, any valid $e$
+has $\sum_i P_i^*e(i)\le1$, so Jensen's inequality gives
+\[
+ E_Q[\log(e/e^*)]\le \log\!\left(\sum_i P_i^*e(i)\right)\le0.
+\]
+
+Here is a family where the factor is explicit. Fix $p_0<p_1<1$ and
+an audit probability $0<s<1$. In the alternative set $r_1=\rho r_0$
+and let $m$ be its total spontaneous reporting probability. Assume
+$0<m<1$ and $m\le p_0+(1-p_0)/\rho$. For the null candidate
+use $p_0$ with the same $m$ and the same reporting ratio. Both laws
+are feasible because their harm-report probability is obtained from
+$r_1=\rho m/(1-p+\rho p)\le1$. Set
+$q_j=\rho p_j/(1-p_j+\rho p_j)$. The tagged factor is
+\[
+ \left(\frac{p_1}{p_0},\ \frac{1-p_1}{1-p_0},\
+       \frac{q_1}{q_0},\ \frac{1-q_1}{1-q_0},\ 1\right).
+\]
+Under the null, the harm probability is at most $p_0$ on the
+audit route and at most $q_0$ conditional on an unaudited report.
+Both conditional mean factors are at most one. Omissions have
+factor one. This proves validity and, by the preceding argument,
+log optimality for the stated alternative.
+
+For the earlier sparse fixture the factor is
+$(8/5,2/5,16/13,4/13,1)$. The 24-opportunity crossing
+probability is $0.4956$, compared with $0.2970$ for the pooled
+factor and $0.0144$ for the denominator factor. In the dense
+alternative, using the sparse factor lowers the crossing probability
+to $0.7634$ from the denominator's $0.8978$. For that dense
+alternative the denominator factor is itself log optimal, by
+taking $P^*$ with the dense reporting parameters and $p=p_0$.
+The sparse factor crossed with probability $0.0746$ and $0.0514$
+in the dense and sparse null fixtures. All use the same threshold
+of eight. The verifier checked 304 vertex constraints and reproduced
+12 short crossings by full path enumeration. Log optimality
+concerns expected growth under the declared alternative. The
+finite-horizon comparisons concern the individual simulated laws.
+
+A monitor can use past or separate evidence to choose a factor
+before the current case. Fixing the factor for sparse reports
+has a cost when reporting is dense. Retaining route labels gives
+a choice between these factors while preserving the null test
+as long as each chosen factor satisfies the conditional constraint.
+
+\section{Using the audit to correct an agent}
+An operator can use independent sampling to investigate
+silent harm or use a justified response ratio to interpret existing
+reports. The first choice costs review time. The second can reduce
+that cost where the reporting channel is well characterized.
+A separate appeal route remains necessary because a statistical
+alarm identifies a pattern of outcomes rather than adjudicating
+a specific person's case. A practical first deployment would be
+a shadow audit on paired notification or scheduling interventions,
+with an independent random sample used to estimate reporting
+differences. Stratify by how easily users can report. The
+prospective test should compare alarm timing, missed harms, and
+review cost while preserving an independently observed denominator.
+Unverified case identities, delayed outcome adjudication, and
+selection that shifts after an alarm require additional controls.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{smith}
+Louisa H. Smith and Tyler J. VanderWeele.
+\emph{Bounding Bias Due to Selection}. Epidemiology 30(4),
+509--516, 2019. \url{https://arxiv.org/abs/1810.13402}.
+\bibitem{howard}
+Steven R. Howard, Aaditya Ramdas, Jon McAuliffe, and Jasjeet Sekhon.
+\emph{Time-uniform, nonparametric, nonasymptotic confidence sequences}.
+2021. \url{https://arxiv.org/abs/1810.08240}.
+\bibitem{larsson}
+Martin Larsson, Aaditya Ramdas, and Johannes Ruf.
+\emph{The numeraire e-variable and reverse information projection}.
+arXiv:2402.18810, version 4, 2025.
+\url{https://arxiv.org/pdf/2402.18810}.
+\end{thebibliography}
+\end{document}

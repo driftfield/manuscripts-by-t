@@ -1,0 +1,386 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Transferable Exposure Escrow Under Ambiguous Agent Effects}}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\title{Transferable Exposure Escrow Under Ambiguous Agent Effects}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+When a disconnected agent receives no receipt, its effect or rights
+transfer may already have succeeded. A single conservation invariant
+keeps both operations backed until their outcomes are durable.
+After rollback, the largest compatible old exposure determines how
+much quota can be issued again. A matching certificate sharpens the
+reserve when unresolved effects compete for two exclusive rights.
+We check the invariant by finite state exploration and exercise
+lost acknowledgments in two local SQLite stores. In the database
+control, a timeout refund exceeds the exposure cap while the quota
+ledger still balances. Applying the rule requires durable custody
+and enforcement at the actual effect sink.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} How can an agent enforce a physical exposure
+cap while effects, transfers and recovery acknowledgments are delayed?
+\paragraph{Finding.} Keep each unresolved effect or transfer backed
+until its durable outcome is known. After closing the old generation,
+reserve the largest old exposure consistent with the evidence and
+reissue only the difference from the cap.
+\paragraph{Evidence and scope.} The invariants are proved
+and checked in separate finite interleaving models. A deployed
+system still needs enforcement at the actual sinks and a recovery
+register outside the state that can roll back.
+
+\section{An exposure cap that survives a network failure}
+A service may allow a local agent to send a bounded number of
+human-facing notifications while disconnected. If an acknowledgment
+does not return, the local service cannot infer that nothing happened.
+The same uncertainty applies if the service moved some of its
+allowance to another device. Treating either timeout as unused
+capacity makes a shared limit unreliable.
+
+Escrow allocation permits local decisions under numeric constraints
+\cite{oneil}. Bounded-counter replication applies the same principle
+to rights transfer between replicas \cite{balegas}. Here the spend
+being limited is a physical effect at a separate sink. We distinguish
+the capacity that a ledger represents from the exposure that a person
+or external system has actually received.
+
+Let $B$ be a fixed cap. Allocate free rights among shards, totaling
+$B$. All charges are nonnegative. An effect request has a unique
+scoped identifier and an upper charge $r$ that covers all effects
+possible under that request. Its true charge $a$ is at most $r$.
+A transfer ticket similarly has a unique identifier, an amount,
+a source, a destination, and authenticated metadata. IDs bind all
+effect or ticket parameters, including the intended recipient.
+Each shard and sink has durable state that cannot silently revert
+or be cloned into a second spendable copy.
+
+\section{Two protocols with one accounting rule}
+\begin{theorem}
+Let $F$ be the total free rights, $R$ the total pending effect
+reservations, $C$ the total settled charges, and $T$ the total
+amounts in transit. Under the stated protocol,
+\[
+F+R+C+T=B.
+\]
+If $X$ is actual cumulative physical exposure, then
+\[
+X\le R+C\le B.
+\]
+\end{theorem}
+
+The two protocols below preserve this accounting. The proof follows
+after the transitions are specified.
+
+An effect admission atomically moves $r$ from the owning shard's
+free rights into a pending reservation. A sink must enforce that
+reservation and atomically either commit the authorized effect
+once or fence the request against future execution. A successful
+commit binds the actual charge and result to the request. A fence
+attests that no effect committed and none can commit later under
+the same request. The shard may settle the corresponding durable
+outcome at most once. Settlement removes the pending amount,
+records $a$ as settled, and returns $r-a$ to free rights. A fence
+settles with charge zero.
+
+Transfer creation atomically debits the sender's free rights and
+places the amount in transit. The receiving ledger may accept the
+ticket once and move the amount to its free rights. Alternatively
+it can durably reject the ticket, ruling out acceptance. Only a
+matching rejection permits the sender to reclaim the amount, at
+most once. Acceptance and rejection are mutually exclusive.
+A duplicate message can return the established status. It cannot
+change rights. A ledger's local view may lag the recipient's
+decision. For the invariant, a transfer remains in transit exactly
+until acceptance or reclaim. An accepted transfer whose acknowledgment
+is missing does not make the debited rights available to the sender.
+
+\begin{proof}
+Admission moves rights from $F$ to $R$. A sink commit changes
+physical exposure without moving the ledger reservation. A fence
+also leaves the reservation backed until settlement. Settlement
+moves $r$ out of $R$, moves $a$ into $C$, and restores $r-a$
+to $F$. A ticket debit moves rights from $F$ to $T$.
+Acceptance or reclaim moves the ticket amount back to $F$
+at the appropriate shard. A rejection alone moves no rights.
+Each transition preserves the sum and all four terms stay
+nonnegative.
+
+Every committed effect has either its full upper charge in
+$R$ or its exact charge in $C$. The categories are mutually
+exclusive by settlement and identifier uniqueness. A reservation
+may back an uncommitted request, but it can back no more than
+one logical effect. Adding the per-effect inequalities gives
+the physical bound.
+\end{proof}
+
+The atomicity requirement is at the effect boundary. Recording a
+key before a separate, fallible external effect can block a valid
+retry. Recording it afterward can permit a duplicate. Transaction
+commit addresses related agreement problems \cite{gray}. If an
+external sink lacks an enforceable commit or fence, the shard
+cannot use this protocol to release an ambiguous reservation.
+
+\section{Why elapsed time cannot establish an unused right}
+\begin{proposition}
+Under an asynchronous channel with no deadline enforced at the
+recipient, a sender cannot infer unused transfer rights from its
+local timeout alone. The same holds for an unresolved effect
+reservation at a separate sink.
+\end{proposition}
+\begin{proof}
+Compare two executions in which the sender transmits the same
+ticket and receives no response before timeout. In one execution
+nothing has arrived at the recipient. In the other, the recipient
+has accepted the ticket and its acknowledgment is delayed.
+The sender has the same observations. Reclaiming in the second
+execution permits both ledgers to spend the same rights. Even
+the first execution is unsafe if the ticket can arrive later
+and be accepted. For an effect, compare the corresponding worlds
+of an undelivered request and a committed request with a lost
+acknowledgment. Returning the pending amount is unsafe when the
+previous request has committed or can still commit.
+\end{proof}
+
+A lease can rule out future execution when expiry is enforced
+at the sink. Expiry alone cannot establish whether an earlier
+effect committed. If neither a confirmed result nor a fence is
+available, the protocol may strand rights for the length of the
+partition. It preserves the cap while leaving that availability
+question open.
+
+\section{Reissuing quota after snapshot rollback}
+A restored snapshot may show free rights that were spent after
+it was taken. State-continuity systems such as Memoir address
+the related problem of detecting rollback of protected state
+\cite{memoir}. Here the snapshot can help identify requests,
+but cannot authorize new spending. First close the old generation
+at all effect sinks and rights recipients. Closure must fence old
+tokens and transfers in the same durable order as acceptance,
+so old physical exposure $X_{\rm old}$ is fixed before reissue.
+
+Let $\mathcal X$ be the nonempty set of old exposures consistent
+with authenticated terminal observations and a complete
+authorization inventory. Let $U=\sup\mathcal X$, with
+$0\le U\le B$. When request reservations are disjoint, an
+exact receipt contributes its charge, an authenticated final
+absence contributes zero, and an unresolved request contributes
+its reservation ceiling. Summing gives a valid upper bound.
+It equals $U$ when the unresolved charges can attain their
+ceilings together. If the inventory is incomplete, include an
+upper bound for the missing authority. The restored snapshot's
+free balance does not supply such a bound.
+
+\begin{proposition}
+The maximum quota that can be reissued and spent independently
+of the remaining uncertainty is $B-U$. Let $G$ be the total
+quota reissued so far. As consistent terminal evidence lowers
+$U$, atomically increase $G$ to $B-U$ and issue only the
+increment. The accounting record and the issuance must survive
+rollback together.
+\end{proposition}
+\begin{proof}
+If $G\le B-U$, then old exposure is at most $U$ and new
+exposure is at most $G$ by the new generation's escrow. Their
+sum is at most $B$. For any grant larger than $B-U$, the
+definition of supremum gives a compatible old exposure that
+would exceed the cap if the grant were fully spent. This proves
+maximality. Compatible evidence can only reduce $\mathcal X$,
+so $B-U$ can only increase. Issuing the difference from the
+durable total preserves the inequality, and replay of the same
+or a weaker observation issues no additional rights.
+\end{proof}
+
+If the grant is issued only in quanta of size $\eta>0$, the
+largest issuable total is $\eta\lfloor(B-U)/\eta\rfloor$.
+The register uses that rounded total before calculating the
+increment. Terminal evidence must describe the same closed
+generation, cap and inventory. Combine valid observations by
+intersection. An empty compatible set signals an evidence
+failure and cannot authorize further issuance.
+
+For a cap of three and reservations of two and one, suppose
+the only verified terminal record says the one-unit request
+did not commit. The two-unit request may have committed in full,
+so recovery can safely reissue one unit. It can issue another
+only after terminal evidence reduces the bound on the two-unit
+request. If restoring the reissue register makes it forget the
+first unit, minting that unit again can violate the cap even
+though the old generation stays fenced.
+
+This reissued unit funds an authorized fresh effect. It does
+not establish that the two-unit request was absent and cannot
+justify retrying that request under a new identifier. Reissue
+preserves the aggregate budget. A uniqueness requirement still
+needs terminal occupancy evidence for the particular effect.
+
+The recovery model explored 67 reachable states and independently
+enumerated compatible worlds for all 12 partial terminal reports.
+The proposed mechanism stayed within the physical cap. Four
+mutants exceeded it: treating unknown as unused, using absence
+observed before the fence, issuing the full recoverable amount
+twice, and rolling back the issuance register. Each witness
+uses physical exposure four under cap three. This check models
+the durability condition. It does not demonstrate an implementation
+of a rollback-resistant register.
+
+\section{Reissue when unresolved requests compete}
+The ceilings of unresolved requests can substantially overstate
+what could have committed together. Suppose each request uses
+one exclusive grant key and one exclusive effect key. A trusted
+old-generation sink could commit at most once at each key.
+An authenticated final absence removes the associated request.
+A verified commit contributes its actual charge to $K$ and
+occupies both keys, even if its charge is zero. Remove those
+occupied keys from the unresolved inventory. This step requires
+durable evidence that the exclusivity rules held before closure.
+Two verified commits on one exclusive key contradict that model.
+
+Use a bipartite graph with grant keys on one side and effect
+keys on the other. An unresolved request is an edge with its
+charge ceiling $r_e$. Any jointly committed set forms a
+matching. Let $M$ be the weight of a maximum matching.
+Then $\min(B,K+M)$ bounds the old exposure. If the constraints
+of the residual evidence are exactly the matching constraints
+and the matching ceilings are attainable together under the
+old cap, $K+M$ is the sharp old maximum.
+
+A checker can certify the matching optimum without running the
+solver. Supply a matching and nonnegative prices $\alpha_u$
+and $\beta_v$ on the two key families. Check
+$\alpha_u+\beta_v\ge r_{uv}$ for every unresolved edge.
+Every matching uses each vertex at most once, so its total
+weight is at most the sum of all prices. Equality with the
+supplied matching proves optimality. Such a certificate exists
+by linear-programming duality. The primal maximizes weighted
+edge usage under unit capacity at each vertex. Negate the rows
+of its incidence matrix on one side to obtain one positive and
+one negative entry per column. Every square submatrix has
+determinant zero or $\pm1$, by expanding a column with at most
+one entry or, if every column has two, summing its rows.
+The unit-capacity polytope therefore has integral vertices.
+The dual variables are precisely the vertex prices.
+
+For example, take a cap of 12 and one confirmed unit of
+exposure. In the residual inventory, the first grant key
+has edges of weights five and four to two effect keys. The
+second grant key has one edge of weight four to the first
+effect key. The two four-unit requests can commit together,
+and grant prices $(4,3)$ and effect prices $(1,0)$ certify
+the maximum of eight. The old exposure can reach nine and
+three units can be reissued. Summing all three unresolved
+ceilings would leave no quota to reissue after clipping to
+the old cap.
+
+The graph gives a safe upper bound even when additional
+constraints make some matchings unattainable. For example,
+two disjoint requests each with indivisible charge four and
+an old cap of five can have old exposure at most four.
+Clipping the unconstrained matching weight to five is safe
+and conservative. The matching verifier agrees with independent
+vertex-price search on 384 synthetic instances. It does not
+establish that a real authorization inventory is complete.
+
+\section{A complete finite interleaving check}
+The verifier models two shards with total cap three, initial
+free rights two and one, four scoped effect requests, and a
+one-unit ticket in each direction. It explores all reachable
+states and records ledger liability separately from physically
+committed effects. Redeliveries that return existing status add
+no state transition. The model includes delayed settlement and
+allows a fenced effect to return its full reservation.
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Protocol & States & Transitions & Maximum physical exposure \\
+\midrule
+Backed until durable outcome & 2,592 & 6,648 & 3 \\
+Effect timeout refunds rights & 12,192 & 37,936 & 5 \\
+Transfer timeout reclaims rights & 8,436 & 24,256 & 5 \\
+Recipient accepts a ticket twice & 6,240 & 19,184 & 5 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The safe graph has neither a conservation error nor an unbacked
+physical effect. Every mutant reaches a state with physical
+exposure four or higher. One short transfer trace sends a
+one-unit ticket, refunds it at timeout, and uses the sender's
+restored balance to commit two units. The recipient then accepts
+the delayed ticket and commits two more units. With cap three,
+that yields a physical violation even though each shard observes
+enough free rights locally.
+
+\section{Retrying effects across separate durable stores}
+The local experiment used one SQLite database for the escrow
+ledger and another for effect outcomes. An effect is a committed
+row at the sink. The ledger reserves the request ceiling in one
+write transaction. At the sink, the request key and parameters
+identify one terminal outcome, either a committed row or a fence.
+Replaying the same request returns the recorded outcome. Reusing
+the key with a different ceiling is rejected. Settlement matches
+the receipt to the reservation and credits the difference between
+its ceiling and charge in one write transaction.
+
+The cap was five. A request reserved four and committed an effect
+of charge three. A child process exited without returning the
+receipt. Reopening both stores showed one free unit, four pending,
+and three committed at the sink. A two-unit request still failed
+admission. Retrying returned the existing receipt, which released
+one unit after settlement. A second request then committed two
+units, bringing exposure to five. Exiting after the first
+settlement commit and retrying did not release the unit twice.
+
+A separate exit before the sink commit left no effect. A durable
+fence prevented a delayed retry from creating one. Exiting before
+settling that fence left the reservation in place, and a retry
+returned the full ceiling once. In the negative control, the
+ledger treated the missing reply after a successful commit as
+an absent effect. That allowed it to spend five additional units.
+The ledger still balanced, while the sink held eight units
+against the cap of five.
+
+The fixture used SQLite 3.54.0 with write-ahead logging and five
+forced process exits. It measures transactions on disposable local
+rows. Real delivery requires binding the same effect identifier
+and terminal record at the service that performs the action.
+This experiment supplies neither that external transaction boundary
+nor evidence about hardware power loss.
+
+\section{Application and evidence boundary}
+The protocol can govern budgets for outbound notifications,
+sandboxed changes, or other effects with a meaningful upper
+charge. Choose the charge unit before admitting requests and
+log both potential liability and committed outcomes. A prospective
+exercise should delay acknowledgments, interrupt settlement,
+replay transfers, and crash the sink at the effect boundary.
+Measure stranded capacity and safe throughput as well as cap
+violations. A ledger rollback, false upper charge, or effect that
+bypasses the enforcement point invalidates the bound. This
+interleaving model and the local transaction experiment establish
+different parts of the protocol. A deployed network still needs an
+enforced upper charge and matching receipts from the real sink.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{oneil} Patrick E. O'Neil. The Escrow Transactional Method.
+ACM Transactions on Database Systems 11(4), 1986.
+\url{https://ics.uci.edu/~cs223/papers/p405-o_neil.pdf}.
+\bibitem{balegas} Valter Balegas et al. Extending Eventually
+Consistent Cloud Databases for Enforcing Numeric Invariants.
+2015. \url{https://arxiv.org/abs/1503.09052}.
+\bibitem{gray} Jim Gray and Leslie Lamport. Consensus on
+Transaction Commit. ACM Transactions on Database Systems 31(1),
+2006. \url{https://arxiv.org/abs/cs/0408036}.
+\bibitem{memoir} Bryan Parno, Jacob R. Lorch, John R. Douceur,
+James Mickens, and Jonathan M. McCune.
+Memoir: Practical State Continuity for Protected Modules.
+\emph{IEEE Symposium on Security and Privacy}, 2011.
+\url{https://www.jonmccune.net/papers/PLDMM2011.pdf}.
+\end{thebibliography}
+\end{document}

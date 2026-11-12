@@ -1,0 +1,221 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Revocation Latency for Disconnected Agent Tools}}
+\newtheorem{theorem}{Theorem}
+\title{Revocation Latency for Disconnected Agent Tools}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+A remote authority cannot instantly revoke a capability at a disconnected
+tool. A lease limits the stale window only if time is bounded at the
+irreversible effect. We derive the exact interval of authoritative
+times consistent with a bounded-rate local clock and authenticated
+time observations. The interval gives the most permissive expiry
+test that is safe for every admissible history and effect duration.
+An exhaustive finite check compares the test with using the latest
+observation alone and with substituting a midpoint for the interval.
+A separate index admits authenticated timestamps out of order while
+retaining the exact envelope and detecting contradictions.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} How can a disconnected tool tell whether an
+irreversible effect will still be within its lease?
+\paragraph{Finding.} Propagating authenticated clock intervals gives the
+exact possible time range. The latest possible start plus the allowed
+commit duration determines the most permissive safe admission under the
+timing model.
+\paragraph{Evidence and scope.} The interval is proved and
+checked against an integer-time oracle. A tool can apply it at the sink
+when staging disconnected work. The result needs a trusted clock, a valid
+drift contract and enforced commit timing.
+
+\section{Model and result}
+Let $e$ be a signed expiry time, $r$ the remote revocation time, and $\delta$ the maximum amount by which the tool clock can lag authoritative time. Admit an effect only while local time is strictly less than $e$. Then any admitted effect has real time $t<e+\delta$. The interval after revocation during which stale effects can occur has length at most $\max(0,e+\delta-r)$. The bound needs a clock that cannot be reset or stalled beyond $\delta$. Once a connected effect gate observes a newer epoch, comparing and committing under the same atomic gate prevents a check-then-use race. This is an instance of complete mediation \cite{saltzer}.
+
+\section{Expiry under bounded clock drift}
+Gray and Cheriton use time-limited rights for cache consistency
+\cite{gray}. Spanner exposes clock uncertainty as an interval to
+applications \cite{corbett}. We ask a narrower question for a
+disconnected effect gate. Given a history of authenticated time
+intervals and a bound on the clock rate, how late could this effect
+possibly occur?
+
+Use a trusted monotone local clock $m(t)$ with rate between
+$1-\rho$ and $1+\rho$ in authoritative time, where $0\le\rho<1$.
+An authenticated observation attaches $[a_i,b_i]$ to local
+reading $m_i$, within one clock instance. The observation
+need only assert that the real time of that reading lies in
+the interval. Receipt of a delayed attestation is a separate
+event and does not move the measurement to a newer reading.
+For a nonnegative reading difference $d$, the possible elapsed
+times lie in
+\[
+ G(d)=\left[\frac{d}{1+\rho},\frac{d}{1-\rho}\right].
+\]
+Starting with $I_0=[a_0,b_0]$, propagate and intersect at each
+authenticated observation:
+\[
+ I_i=\bigl(I_{i-1}+G(m_i-m_{i-1})\bigr)\cap[a_i,b_i].
+\]
+Here $I+G$ is the set of pairwise sums. Stop at the first
+empty intersection. After the latest observation, propagate
+once more to the current reading to obtain $[L,U]$.
+
+\begin{theorem}
+For a feasible history, $[L,U]$ is exactly the interval of
+possible authoritative times at the current reading. If the
+model permits every delay in $[0,D]$ from each feasible current
+time to irreversible commit, the most permissive safe policy
+admits exactly when $U+D<e$.
+\end{theorem}
+\begin{proof}
+For any two consecutive readings, the rate bound implies the
+elapsed-time interval $G$. Conversely any positive elapsed time
+in that interval gives a constant admissible rate for that
+segment. A repeated reading requires elapsed time zero.
+Thus every time in the propagated sum extends a feasible past
+trajectory, and every actual trajectory is included. Intersecting
+with the authenticated interval retains exactly the valid
+extensions. Induction proves the claim, including after the
+final propagation. Adding the allowed duration interval gives
+latest possible commit time $U+D$, which is attainable under
+the model. An admission at or beyond the bound cannot guarantee
+that the actual commit is strictly before $e$.
+\end{proof}
+
+An upper duration bound alone still makes $U+D<e$ sufficient.
+Maximal permissiveness uses the stronger assumption that the
+latest feasible start and longest delay can occur together. If
+the sink separately enforces a hard commit cutoff $K$, then
+$\min(U+D,K)$ is also an upper bound. For example, $U=9$ and
+$D=3$ do not certify expiry at 11, while a trusted cutoff at 10
+does. The cutoff must be enforced at the effect boundary.
+
+Checking only whether the final projections overlap misses
+contradictions in old observations. For $\rho=1/2$, a local
+reading of zero at real time zero and a reading of three at
+real time seven cannot both be valid, because the elapsed time
+must be at most six. At reading six, however, their individual
+projections are $[4,12]$ and $[9,13]$. The incremental filter
+rejects the contradiction when it first appears.
+
+An earlier reading can also enable an admission. Take
+$\rho=1/4$, a reading of zero attested at real time in $[0,1]$,
+and a current reading of six. Using just that observation gives
+upper time nine. Add an attestation for reading three at real
+time in $[12/5,3]$. Its intersection is nonempty and the new
+upper time at reading six is seven. With a one-unit commit
+allowance and expiry at nine, the updated interval admits the
+request. The two observations use the same clock domain.
+
+\section{Inserting an attestation that arrives late}
+An inverse clock maps a local reading $x$ to authoritative time.
+Its secant slopes lie between $\lambda_-=1/(1+\rho)$ and
+$\lambda_+=1/(1-\rho)$. For an anchor $[a_i,b_i]$ at $m_i$,
+define its propagated lower and upper functions as
+\[
+\begin{aligned}
+ f_i(x)&=a_i+\begin{cases}
+ \lambda_-(x-m_i),&x\ge m_i,\\
+ \lambda_+(x-m_i),&x<m_i,
+ \end{cases}\\
+ g_i(x)&=b_i+\begin{cases}
+ \lambda_+(x-m_i),&x\ge m_i,\\
+ \lambda_-(x-m_i),&x<m_i.
+ \end{cases}
+\end{aligned}
+\]
+For a feasible set of anchors, the sharp interval at any reading
+is $[\max_i f_i(x),\min_i g_i(x)]$. A delayed anchor at $x$ is
+compatible exactly when its interval intersects this interval.
+
+To prove the claim, every admissible inverse clock lies between
+these functions. Each function satisfies the secant slope bounds.
+Finite maxima and minima preserve both slope inequalities, so the
+two envelopes are also inverse clocks within the model. At a known
+anchor each envelope lies in its stated interval. For the lower
+envelope this follows from its own anchor term and from the upper
+bound on any feasible witness. The upper envelope follows by the
+reverse argument. Both endpoints are therefore attained. Convex
+combinations give every intermediate time and can absorb a compatible
+new anchor. An incompatible authenticated anchor makes the whole
+set infeasible. The gate must hold that clock instance closed until
+an authorized recovery establishes a new timing basis.
+
+For an insertion or query, split the anchors into readings below
+and above $x$. For example, the lower value from the first part
+is $\lambda_-x+\max_{m_i\le x}(a_i-\lambda_-m_i)$.
+The upper value there uses $\lambda_+$ and a minimum. The second
+part exchanges the two slopes. An ordered index that maintains
+these prefix and suffix extrema can update and query them without
+rescanning the complete history. The prototype uses two range
+aggregate arrays on a fixed reading grid. Production admission
+still needs a trusted reading at the commit point.
+
+With drift $1/2$, an attestation at reading six of $[4,12]$
+followed by a delayed attestation of time three at reading three
+narrows the interval at six to $[5,9]$. A separate control first
+attests $[4,12]$ at reading six and time zero at reading zero.
+It then receives time seven at reading three. Projections can
+overlap at six, but the new anchor contradicts the elapsed-time
+limit from zero. The gate remains closed after the contradiction.
+
+The index matched a two-direction propagation oracle on 4,608
+queries. With 512 feasible readings in shuffled arrival order,
+it visited 11,266 aggregate nodes over insertions and queries.
+Rescanning the chronological anchors after each arrival visits
+131,328 anchors. These counts compare work units on the stated
+fixture. They do not measure clock or network performance.
+
+\section{Reproducible checks}
+The verifier enumerated 192 integer expiry, revocation, and clock-lag combinations. With expiry six, revocation at three, and lag two, the admissible stale ticks are three through seven, attaining the bound of five. An unbounded clock lag makes the model's bound vacuous.
+
+For the bounded-rate model, an independent integer-time
+enumeration found 335 feasible and 1,852 inconsistent histories.
+The filter agreed on the entire feasible set and on 25,125
+expiry and duration decisions. It recovered 135 safe admissions
+that the newest-observation rule denied. The midpoint rule
+would have admitted 2,415 decisions for which a late commit
+was possible. These are counts on a synthetic grid, with the
+drift chosen to give integral gap endpoints. They do not
+measure the rate of failures of a physical clock.
+
+\section{Application and next test}
+An offline adapter can stage a write while disconnected and defer
+the irrevocable commit to a trusted sink. Check time at that sink
+with $D=0$ when the test and commit share a linearization point.
+Otherwise use an independently enforced upper duration bound.
+For instance, a request admitted at time four with expiry five
+may still commit at time five. The expiry gate must cover queued
+effects as well as newly submitted ones. An observed epoch update
+still needs an atomic comparison with the effect. A remote
+revocation that has yet to arrive leaves old authority available
+until the sink enforces its lease cutoff. Expiry limits when
+an effect may occur. Determining whether one already occurred
+requires terminal evidence.
+
+Bind observations to one trusted boot and clock domain. Refuse
+if suspension, reset, or uncertainty invalidates the rate
+contract. A physically deployed check would need to measure
+clock behavior across suspend and resume, inject delayed epoch
+updates, and test the actual sink's commit boundary. The
+finite model does not certify any host's timing behavior.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{saltzer} Jerome H. Saltzer and Michael D. Schroeder. \emph{The Protection of Information in Computer Systems}. 1975. \url{https://cgi.cse.unsw.edu.au/~cs9242/20/papers/Saltzer_Schroeder_75.pdf}.
+\bibitem{gray} Cary G. Gray and David R. Cheriton. Leases: An
+Efficient Fault-Tolerant Mechanism for Distributed File Cache
+Consistency. \emph{SOSP}, 1989.
+\url{https://web.stanford.edu/class/archive/cs/cs240/cs240.1056/readings/89-leases.pdf}.
+\bibitem{corbett} James C. Corbett et al. Spanner: Google's
+Globally Distributed Database. \emph{ACM Transactions on Computer
+Systems}, 31(3), article 8, 2013.
+\url{https://storage.googleapis.com/gweb-research2023-media/pubtools/1974.pdf}.
+\end{thebibliography}
+\end{document}

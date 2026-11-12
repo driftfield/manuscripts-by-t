@@ -1,0 +1,346 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={When Abstention Fails to Transfer Across an Ethical Benchmark Shift}}
+\newtheorem{theorem}{Theorem}
+\title{When Abstention Fails to Transfer Across an Ethical Benchmark Shift}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+An assistant may defer cases on which a learned judgment is uncertain.
+That strategy is useful only if confidence continues to rank errors
+when the cases change. We prove a sharp transfer bound for risk
+conditional on a fixed acceptance rule. When target coverage is
+observed, an exact interval can be tighter. We then fit a lexical classifier
+on the public ETHICS commonsense corpus and freeze three abstention
+rules on a development split. At the strictest raw-confidence threshold,
+accuracy among retained cases rises on the ordinary test but falls on
+the hard test. The rule also omits every short test case at that
+threshold. Reporting coverage and error separately exposes both effects.
+At equal short- and long-text quotas, three confidence rankings
+beat a score-free baseline on the ordinary split. None beats it
+on the hard split.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} When can a frozen abstention rule make accepted
+ethical judgments less reliable after a shift?
+\paragraph{Finding.} A sharp total-variation bound applies at fixed
+acceptance. A sharper interval uses the observed coverage. On ETHICS,
+the strict raw-confidence rule retains zero short
+texts, and reweighting retained texts by length and label does not
+explain the hard split's accuracy drop.
+\paragraph{Evidence and scope.} The lexical
+experiment is separate empirical evidence on public dataset labels. The
+result supports checking retained errors and omissions before automating
+actions. It gives no estimate of language-model behavior or real-world
+moral correctness.
+
+\section{Abstention changes the population being judged}
+A tool-use assistant may ask for human review when a classifier
+cannot decide whether an action is permissible. When the classifier
+accepts a case, the relevant risk is conditional on acceptance.
+A lower acceptance rate can improve that risk when uncertainty
+is informative. It can also concentrate mistakes or leave one
+type of user request entirely without automatic service.
+
+Selective classification formalizes the coverage and error
+tradeoff \cite{geifman}. Empirical work on uncertainty under
+distribution shift shows the need to test confidence on changed
+inputs \cite{ovadia}. Here we use a deliberately small classifier
+to isolate what a frozen abstention threshold does on two public
+splits of an ethical judgment benchmark \cite{hendrycks}.
+
+\section{A sharp conditional transfer bound}
+Let $P$ and $Q$ be two laws on the joint input and label.
+Fix a classifier and acceptance event $A$ before evaluating
+either law. Let $E$ be the classifier's error event,
+$p=P(A)>0$, $q=Q(A)>0$, and
+$r_P=P(E\mid A)$, $r_Q=Q(E\mid A)$.
+
+\begin{theorem}
+If $\mathrm{TV}(P,Q)\le\varepsilon$, then
+\[
+ |r_Q-r_P|\le\min\!\left\{1,\frac{\varepsilon}{\max(p,q)}\right\}.
+\]
+\end{theorem}
+\begin{proof}
+Write $\Delta_1=Q(A\cap E)-P(A\cap E)$ and
+$\Delta_0=Q(A\cap E^c)-P(A\cap E^c)$. Both have absolute
+value at most $\varepsilon$. Direct expansion gives
+\[
+q(r_Q-r_P)=(1-r_P)\Delta_1-r_P\Delta_0 .
+\]
+The absolute value is at most $\varepsilon$, since the two
+nonnegative coefficients sum to one. Reversing the roles of
+$P,Q$ gives the same bound with denominator $p$. Combining
+both and using the unit range proves the claim.
+\end{proof}
+
+For sharpness, use three states for retained error, retained
+correct, and rejection. Let $P=(0,c,1-c)$ and
+$Q=(\varepsilon,c-\varepsilon,1-c)$ with
+$0<\varepsilon\le c\le1$. Both have coverage $c$ and their
+conditional risks differ by $\varepsilon/c$. Exact enumeration
+on denominator-eight laws checked all 1,936 ordered pairs with
+positive coverage and found 560 nontrivial equalities.
+The theorem concerns joint input and label laws. Text similarity
+alone cannot certify $\varepsilon$. We do not estimate a
+deployment shift radius from the corpus.
+
+\section{Using target coverage before labels arrive}
+Coverage can be measured before anyone adjudicates accepted
+predictions. Let $a=P(A\cap E)$ and write $d=q-p$. Assume
+that each of the three cells for accepted error, accepted correct,
+and rejection can receive mass in the target model. Set
+\begin{align*}
+ L(q)&=\max\{0,a+[d]_+-\varepsilon\},\\
+ U(q)&=\min\{q,a+\min(0,d)+\varepsilon\},
+\end{align*}
+where $[d]_+=\max(0,d)$.
+
+\begin{theorem}
+If $|q-p|>\varepsilon$, the coverage is incompatible with
+the assumed total-variation bound. Otherwise the sharp range
+of retained risk is $[L(q)/q,U(q)/q]$. If target coverage is known
+only to lie in a positive closed interval, first intersect the
+interval with $[p-\varepsilon,p+\varepsilon]$. If the intersection
+is nonempty, the coverage nearest $p$ gives the sharp endpoints
+over that entire intersection.
+\end{theorem}
+\begin{proof}
+The changes in the three cell masses are $x-a$, $d-(x-a)$,
+and $-d$, where $x=Q(A\cap E)$. They sum to zero. For three
+such changes the total variation is their largest absolute
+value, since the sum of the positive changes equals the
+absolute value of the sum of the negative changes. Bounding
+all three and imposing $0\le x\le q$ gives $[L(q),U(q)]$.
+Every allowed triple of masses attains its projected total
+variation by retaining the source law conditional on each cell
+of positive source mass. For a source-null cell, use any law
+supported there. This gives the sharp range in the stated model.
+
+For $q\le p$, the lower ratio is
+$\max(0,(a-\varepsilon)/q)$ and is nonincreasing in $q$.
+The upper ratio is $\min(1,1+(a+\varepsilon-p)/q)$ and
+is nondecreasing. For $q\ge p$, the lower ratio is
+$\max(0,1+(a-\varepsilon-p)/q)$ and is nondecreasing,
+and the upper ratio is $\min(1,(a+\varepsilon)/q)$ and is
+nonincreasing. Thus the coverage nearest $p$ gives the widest
+risk interval among the feasible coverages.
+\end{proof}
+
+For example, suppose source coverage is $0.60$ with retained
+risk $0.20$. A shift radius of $0.20$ and target coverage of
+$0.40$ give the exact retained-risk interval $[0,0.30]$.
+The earlier symmetric inequality gives an upper bound of $8/15$.
+The sharper result uses the direction of the coverage change.
+The verifier agreed with direct enumeration on 3,168 fixed
+coverage cases and 14,256 interval cases. A measured coverage
+outside the feasible interval challenges the radius assumption.
+Coverage inside the interval still leaves the radius unverified.
+
+\section{Frozen comparison on public text}
+The public ETHICS commonsense files contain short and long
+scenarios with binary judgment labels. The authors' hard split
+was produced by adversarial filtering \cite{hendrycks}. We
+use their split as a stress condition. Short and long are
+dataset strata, not demographic groups.
+
+Normalize and hash every text. Drop conflicting duplicates and
+keep one copy of each remaining normalized text. Assign training
+texts to fitting or development by hash modulo five. This gives
+11,093 fitting texts and 2,816 development texts. Remove any
+normalized training digest from each official test split. This
+removes 1,160 ordinary test texts, leaving 2,725. The hard split
+has 3,964 remaining texts and no exact normalized training
+overlap. This filter controls exact normalized overlap only.
+The same public splits have been used for earlier exploratory
+baselines, so this is a frozen comparison within an existing
+benchmark rather than a new external blind evaluation.
+
+Fit one multinomial word classifier with additive smoothing.
+Its 14,269-word vocabulary is selected on the fitting texts.
+Let $s$ be its log odds and predict the positive label when
+$s>0$. For abstention, compare $|s|$, $|s|$ divided by the
+number of known tokens, and separate $|s|$ thresholds for
+short and long texts. The prediction itself is identical
+across the three rules. Calibrate cutoffs on development data
+to retain 80, 50, or 20 percent, keeping ties. Apply every
+threshold unchanged to both test splits. The release of these
+thresholds is a coverage calibration, with no guarantee that
+it controls error on a changed law.
+
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Rule and development target & \multicolumn{2}{c}{Ordinary} & \multicolumn{2}{c}{Hard} \\
+ & Coverage & Retained accuracy & Coverage & Retained accuracy \\
+\midrule
+Forced prediction & 100.00 & 58.79 & 100.00 & 45.59 \\
+Raw confidence, 50\% & 26.28 & 72.21 & 53.23 & 40.76 \\
+Per-token confidence, 50\% & 62.83 & 59.99 & 47.05 & 45.63 \\
+Group thresholds, 50\% & 48.99 & 63.00 & 47.33 & 43.28 \\
+Raw confidence, 20\% & 8.40 & 89.52 & 18.84 & 37.08 \\
+Per-token confidence, 20\% & 30.35 & 57.19 & 18.26 & 50.55 \\
+Group thresholds, 20\% & 19.38 & 64.39 & 17.94 & 46.13 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize Entries are percentages. The receipt includes the 80 percent target.
+\end{center}
+At the strictest raw threshold the ordinary split retained 229
+texts, of which 205 were correct. The hard split retained 747
+texts, of which 277 were correct. Both retained zero short
+texts. Group-specific calibration retained both strata at this
+target, but still achieved only 328 correct predictions among
+711 retained hard texts. Normalizing the score changed the
+coverage mix and gave 366 of 724 correct at its strictest
+hard threshold. These rules trade off different coverage and
+accuracy profiles, and the experiment does not select a winning
+rule using the test results.
+
+Consider errors in the direction of declaring a text permissible
+when the dataset marks it as wrong. Among 429 hard texts declared
+permissible by the strict raw threshold, the dataset labels
+275 as wrong. Under forced prediction the corresponding counts are
+1,265 of 2,246. The stricter rule makes fewer such errors in
+absolute terms because it acts less often. The fraction among
+its permissive predictions is higher. Both quantities matter
+when a deployment uses the output to decide whether to act.
+
+\section{Does the mix of retained texts explain the drop?}
+Fix a rule and form cells by crossing the dataset's short and long
+categories with its binary label. In split $D\in\{O,H\}$, let $w_{Dg}$
+be the share of retained texts in cell $g$ and $a_{Dg}$ their accuracy.
+On common support, the difference in retained accuracy is
+\[
+ \sum_g (w_{Hg}-w_{Og})\frac{a_{Hg}+a_{Og}}{2}
+ +\sum_g \frac{w_{Hg}+w_{Og}}{2}(a_{Hg}-a_{Og}).
+\]
+The two terms separate changes in shares and changes in accuracy
+within cells. This is the symmetric Kitagawa decomposition
+\cite{oaxaca}. Expanding each summand cancels both cross terms and
+leaves $w_{Hg}a_{Hg}-w_{Og}a_{Og}$.
+
+A second comparison holds ordinary cell accuracies fixed and gives
+them the hard split's shares, yielding $\sum_g w_{Hg}a_{Og}$.
+If a hard cell has no ordinary observations, its term is bounded
+between zero and its hard share. Every reweighting on ordinary
+support must lie between the smallest and largest ordinary cell
+accuracies, because the weights are nonnegative and sum to one.
+
+\begin{center}
+\small
+\begin{tabular}{lrr}
+\toprule
+Retained cell at the strict raw threshold & Ordinary correct/total & Hard correct/total \\
+\midrule
+Long, label 0 & $118/132$ & $154/349$ \\
+Long, label 1 & $87/97$ & $123/398$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Reweighting the ordinary accuracies to match the hard split yields
+$89.55\%$, compared with the observed $37.08\%$ on the hard split.
+Even assigning all weight to the lower-accuracy ordinary cell gives
+$118/132$, or $89.39\%$. The symmetric decomposition assigns
+$-0.71$ percentage points to changed shares and $-51.73$ points
+to within-cell changes. The strict raw threshold is the only one
+of the ten evaluated regimes whose hard accuracy falls below every
+ordinary length-by-label cell. Across the ten regimes, applying the
+hard shares to the ordinary accuracies gives a higher estimate
+than the observed hard accuracy. The comparison is descriptive:
+other features of the texts can change within a length-by-label
+cell, and the calculation does not identify which feature drove
+the errors.
+
+\section{Comparing rankings at the same coverage}
+Different cutoffs accept different numbers of short and long
+texts. To test the ranking itself, we kept the same fitted
+classifier and gave each rule the same acceptance quota within
+each length group. A score-free rule orders normalized text
+digests and serves as a baseline. We compared it with raw
+confidence, confidence per known token, and a score learned
+from development-set correctness.
+
+Split the held development fifth into 1,439 cases for learning
+the ranking and 1,377 for calibrating the cutoffs. Within each
+length and predicted-label group, divide per-token confidence
+into five bins using the ranking cases. Rank by the smoothed
+correctness rate of the corresponding bin. The rate is the
+number of correct predictions plus one, divided by the bin count
+plus two. Break all ties by the same text digest order. These
+rules were fixed before the new scoring run on the previously
+explored public splits.
+
+In the matched comparison, accept the top fifth of each length
+group in each test batch, rounding up. This procedure uses the
+unlabeled batch to set its quota. Flipping every test label
+left every selected set unchanged. Each rule retained 422 short
+and 124 long texts on the ordinary split and 341 short and
+452 long texts on the hard split.
+\begin{center}
+\small
+\begin{tabular}{lrr}
+\toprule
+Ranking & Ordinary correct of 546 & Hard correct of 793 \\
+\midrule
+Score-free digest & 320 & 348 \\
+Raw confidence & 351 & 346 \\
+Per-token confidence & 357 & 342 \\
+Development correctness & 341 & 345 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The per-token ranking gained 37 correct decisions over the
+score-free rule on the ordinary split and lost six on the hard
+split. Learning correctness on development data did not reverse
+that shift. In the separate threshold-transfer comparison, the
+cutoffs were fitted only on the calibration half and applied
+unchanged. Every rule retained both length groups. Across the
+four rules, hard-split acceptance counts ranged from 320 to 360
+for short texts and from 379 to 487 for long texts. A batch quota
+controls representation directly, while a fixed threshold offers
+a streaming rule whose coverage can drift. Neither comparison
+uses a new external holdout.
+
+\section{Application and limits}
+A service can use a confidence score to prioritize human review,
+provided it checks both coverage and errors under the relevant
+conditions. Keep authorization and high-impact constraints
+outside the score. To test a proposed deferral rule, preregister
+its threshold and evaluate both retained accuracy and omissions
+in each affected group. A better follow-up would use independent
+adjudication of actual agent actions on a new cohort and would
+measure what happens to deferred cases. This study measures
+agreement with dataset judgments for one small classifier.
+It supplies no estimate of moral correctness, language-model
+behavior, or the consequences of real tool use.
+
+The reweighting and decomposition use exact rational arithmetic.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{geifman} Yonatan Geifman and Ran El-Yaniv.
+Selective Classification for Deep Neural Networks. NeurIPS, 2017.
+\url{https://arxiv.org/abs/1705.08500}.
+\bibitem{ovadia} Yaniv Ovadia et al. Can You Trust Your Model's
+Uncertainty? Evaluating Predictive Uncertainty Under Dataset Shift.
+NeurIPS, 2019. \url{https://arxiv.org/abs/1906.02530}.
+\bibitem{hendrycks} Dan Hendrycks et al.
+Aligning AI With Shared Human Values. ICLR, 2021.
+\url{https://arxiv.org/abs/2008.02275}.
+\bibitem{oaxaca} Ronald L. Oaxaca and Eva Sierminska.
+Oaxaca-Blinder Meets Kitagawa: What Is the Link?
+\emph{PLOS ONE} 20(5), e0321874, 2025.
+\url{https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0321874}.
+\end{thebibliography}
+\end{document}

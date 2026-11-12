@@ -1,0 +1,415 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Subgroup Safety Certification After Checkpoint Selection}}
+\newtheorem{theorem}{Theorem}
+\title{Subgroup Safety Certification After Checkpoint Selection}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+A release cohort loses statistical force when its results guide checkpoint
+selection. We combine paired sequential tests for subgroup safety with a
+false-promotion bound that accounts for reuse of the cohort. The fixed
+checkpoint error depends on the subgroup claim being made. The additional
+error depends on maximal leakage through the selection channel. For
+adaptive binary feedback with declared fidelities, a backward recursion
+bounds the leakage of the final decision, accounting for early stopping
+and for different histories that select the same checkpoint. Finite
+examples attain the bounds and separate the costs of the subgroup claim
+and checkpoint selection. For sampling without replacement from a
+frozen cohort, we derive the conditional mean bound the paired test
+needs. A six-case example shows that omitting it can exceed the
+nominal error allowance.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} What is the error cost of using release-cohort
+feedback to select the checkpoint that the cohort will test?
+\paragraph{Finding.} Maximal leakage multiplies the fixed-checkpoint
+release bound. The fixed bound depends on what the release asserts.
+An all-group decision avoids the extra factor used to protect
+individual group declarations.
+\paragraph{Evidence and scope.} The finite-channel bound
+and arithmetic checks are exact. Paired tests require a conditional
+mean assumption for each unsafe group. Selection accounting requires
+every cohort-derived input, including timing or stop decisions if they
+reveal information. The numerical examples use synthetic data.
+
+\section{A release test that talks to training}
+Suppose a team trains an assistant to respect a person's veto and tests
+each proposed release on permission-sensitive cases. Returning a
+detailed failure report helps the team repair a model, but a checkpoint
+chosen in response is statistically dependent on the release sample.
+Teams that can afford two samples can route debugging to a development
+cohort and preserve a fresh release cohort. We ask what a formal guarantee
+requires when a bounded feedback channel shares the release cohort.
+
+The analysis builds on maximal leakage \cite{issa} and on information
+bounds for post-selection inference \cite{rogers}. Its operational
+contribution is an explicit release calibration. It distinguishes the
+effect of feedback on the final chosen checkpoint from that of
+feedback visible in a longer development transcript.
+
+\section{Risk of a false promotion}
+Let $S$ denote the release sample and $C$ the final selected checkpoint,
+including any test configuration chosen alongside it. Assume finite
+output and sample spaces. All randomness independent of $S$ may be
+conditioned on first, provided the fixed-output error guarantee then
+holds uniformly over that randomness. For each possible output $c$, let
+$E_c$ be the set of samples on which $c$ would be falsely promoted.
+Define
+\[
+m_c=\max_s\Pr(C=c\mid S=s),\qquad L(C\mid S)=\sum_c m_c ,
+\]
+with the maximum over the support of $S$. The logarithm of $L$ is
+the discrete maximal leakage of this channel \cite{issa}.
+
+\begin{theorem}
+If $\Pr(S\in E_c)\le p_c$ for each fixed output $c$, then
+\[
+\Pr(S\in E_C)\le\min\!\left(1,\sum_c m_c p_c\right).
+\]
+If the bound is $p$ uniformly, the right side is at most
+$\min(1,p\,L(C\mid S))$.
+\end{theorem}
+\begin{proof}
+Partition the event by the selected output. Each summand is
+\[
+\sum_{s\in E_c}\Pr(S=s)\Pr(C=c\mid S=s)
+ \le m_c\Pr(S\in E_c).
+\]
+Summing proves both statements.
+\end{proof}
+
+If $C$ is computed from transcript $T$ and independent randomness, then
+$L(C\mid S)\le L(T\mid S)$. For a fixed conditional law
+$K(c\mid t)$, bound
+$\max_s\sum_t K(c\mid t)\Pr(T=t\mid S=s)$ by
+$\sum_t K(c\mid t)\max_s\Pr(T=t\mid S=s)$ and sum over $c$.
+Thus the final-checkpoint bound can improve when different feedback
+histories converge to the same decision. In contrast, if checkpoint
+selection also observes an uncounted score, feedback law, or runtime,
+the assumed factorization through $T$ may fail.
+
+\subsection{When the maximum channel weight is rare}
+Write $K_c(s)=\Pr(C=c\mid S=s)$ and let $\mu$ be the law of $S$.
+A maximum channel weight charges the same price whether it occurs
+on every sample or only on a rare one. If the sample law is known,
+we can account for how much mass actually lies near that maximum.
+
+\begin{theorem}
+Given a fixed-output false-pass allowance $p_c$, the sharp
+contribution bound when fractional false-pass profiles are allowed is
+\[
+ B_c=\min_{0\le t\le1}\left\{t p_c+
+              \mathbb E_\mu[(K_c(S)-t)_+]\right\}.
+\]
+The total selected false-pass probability is at most $\sum_c B_c$.
+The same bound applies to deterministic false-pass events. It is
+sharp for those events when samples are equally likely and each
+$p_c$ is an integer multiple of the sample mass.
+\end{theorem}
+\begin{proof}
+A false-pass profile $f_c(s)$ takes values in $[0,1]$ with
+$\mathbb E_\mu f_c\le p_c$. A deterministic event gives an
+indicator. A fractional profile uses a fresh random coin
+independent of selection conditional on $S$. Its contribution is
+$\mathbb E_\mu[K_c f_c]$. For any $t\in[0,1]$,
+$K_c f_c\le t f_c+(K_c-t)_+$, giving the bound. To attain it,
+spend the false-pass mass on the samples with largest $K_c$,
+using a partial fraction only at the boundary if necessary.
+Choosing $t$ at the boundary makes the pointwise bound an
+identity on that allocation. Uniform samples with a whole-number
+budget need no partial atom. Each column can attain its optimum
+independently, since the model imposes only the separate
+false-pass budgets. The selected output events are disjoint.
+\end{proof}
+
+For an uncertain law, suppose $\mathrm{TV}(\mu,\mu_0)\le\varepsilon$
+and the fixed-output error budgets hold under the actual law.
+For thresholds $t_c$, let $\Phi(s)=\sum_c(K_c(s)-t_c)_+$.
+A valid bound is
+\[
+ \sum_c t_c p_c+\mathbb E_{\mu_0}\Phi(S)
+      +\varepsilon\bigl(\max_s\Phi(s)-\min_s\Phi(s)\bigr).
+\]
+To see this, subtract the minimum of $\Phi$ before comparing
+expectations. The positive mass difference has total at most
+$\varepsilon$ and can increase the result by at most the stated
+range times that mass. This calculation needs the same conditional
+channel on the declared support and a justified bound on law drift.
+
+For example, let $S$ be uniform on eight samples. For one of two
+checkpoints, the selection probability is $7/8$ on one sample,
+$1/8$ on another, and $1/2$ on the other six. The other checkpoint
+gets the complementary probability. With $p_c=1/4$ for each,
+the maximum-weight bound is $7/16$. Each exact column uses one
+rare maximum and one ordinary sample, giving total bound $11/32$.
+If the sample law can move by total variation $1/16$, setting
+both thresholds to $1/2$ yields bound $47/128$, still below $7/16$.
+The verifier matched 288 column optimizations against exhaustive
+subatom selection and compared the sensitivity example across
+57 nominal or one-unit-shift laws.
+
+\section{Budgeting repeated randomized replies}
+Suppose response $i$ gives one bit. Conditional on any reachable
+history, a deterministic query about $S$ has a binary answer, and
+the mechanism returns the correct bit with probability $\lambda_i$
+using a fresh coin. Take $\lambda_i\in[1/2,1]$ fixed in advance.
+The per-history sum of the two maximum conditional probabilities is
+at most $2\lambda_i$. For a prefix $t$ and extension $y$,
+\[
+\begin{aligned}
+\max_s\Pr(T_i=(t,y)\mid S=s)
+&\le \max_s\Pr(T_{i-1}=t\mid S=s)\\
+&\quad{}\cdot
+\max_{s:\,\Pr(T_{i-1}=t\mid S=s)>0}
+\Pr(T_i=(t,y)\mid S=s,T_{i-1}=t).
+\end{aligned}
+\]
+A prefix impossible for every $s$ contributes zero. Summing over
+extensions and iterating yields
+$L(T_d\mid S)\le\prod_{i=1}^d2\lambda_i$.
+Queries may adapt to earlier responses. To support early stopping,
+derive the stop decision from the released history and pad the
+transcript with a fixed symbol. A stop or delay that depends directly
+on the hidden cohort needs its own accounting.
+
+\section{Bounding an adaptive selection tree}
+A binary tree can give a tighter bound when the protocol stops early
+or several leaves select the same result. At internal node $h$,
+let $\lambda_h\in[1/2,1]$ be the declared fidelity, so that the
+conditional probability of taking either branch lies between
+$1-\lambda_h$ and $\lambda_h$. A leaf $\ell$ determines the final
+configuration $f(\ell)$. For each possible output $c$, set
+$F_c(\ell)=\mathbf 1_{\{f(\ell)=c\}}$ and work backward by
+\[
+ F_c(h)=\lambda_h\max\{F_c(h0),F_c(h1)\}
+       +(1-\lambda_h)\min\{F_c(h0),F_c(h1)\}.
+\]
+\begin{theorem}
+With root $r$, $L(C\mid S)\le\sum_c F_c(r)$. Equality holds
+for randomized response if the sample support realizes every joint
+assignment of the query truth bits at the tree's internal nodes.
+\end{theorem}
+\begin{proof}
+Fix a sample and a target output. Conditional on reaching $h$,
+the probability of the target is a convex combination of its
+probabilities at the two children. A child reached with
+probability zero contributes zero. Backward induction bounds
+the two child probabilities by their envelopes. The largest
+allowed weight on the larger envelope is $\lambda_h$, proving
+the stated bound. With all truth assignments available, for
+each target $c$ choose a sample with the truth bit favoring
+the larger child envelope at every node. Fresh response coins
+then attain $F_c(r)$. The maximizing sample can vary with $c$.
+\end{proof}
+For example, ask for bit $x$ at fidelity $3/4$. A zero response
+selects checkpoint zero immediately. A one response leads to a
+perfect report of bit $y$, which selects checkpoint $y$. The
+depth-based bound is $3$. With all four truth pairs possible,
+each of the three terminal transcripts has maximum probability
+$3/4$, giving $L(T\mid S)=9/4$. The checkpoint maxima are
+$1$ and $3/4$, giving $L(C\mid S)=7/4$. All 3,180 finite
+tree configurations checked agreed with forward enumeration
+under full truth support. Merging outputs strictly decreased
+the multiplier in 2,924 configurations. Restricting support
+to even-parity truth assignments reduced it further in 48.
+
+\section{Charging for the claim the release makes}
+Suppose a fixed candidate must pass all $G$ declared groups.
+If it is unsafe for even one group, a false release implies a
+false pass in that particular group. With a group error bound
+$a$, the fixed-candidate false-release probability is therefore
+at most $a$. This uses no independence across groups.
+For a claim that at least $k$ groups are safe, choose
+$G-k+1$ unsafe groups when that claim is false. The other
+groups cannot supply $k$ passes, so a union bound on the
+chosen subset gives fixed-candidate error at most
+$(G-k+1)a$. Separate declarations that any named passing
+group is safe instead require control of each false declaration.
+
+The selection theorem multiplies the fixed-candidate bound by
+$L(C\mid S)$, whether the group passes use fixed samples or
+valid anytime tests. Include in $S$ every input to the test
+whose dependence on selection matters. Include in $C$ all
+cohort-dependent configuration choices, such as the group
+definitions or rule thresholds. A conditional fixed-candidate
+guarantee still has to hold for any randomness conditioned out.
+
+For a paired test, let $D_{g,i}\in\{-1,0,1\}$ be the difference
+between the candidate's and baseline's binary violation indicators
+on group $g$'s case $i$. Let $\delta_g<1$ be its allowed mean
+increase. Under the unsafe null
+$\mathbb E[D_{g,i}\mid\mathcal F_{g,i-1}]\ge\delta_g$,
+choose predictable $b_{g,i}\in[0,1/(1-\delta_g)]$ and form
+\[
+ M_{g,t}=\prod_{i=1}^t[1+b_{g,i}(\delta_g-D_{g,i})].
+\]
+Each factor is nonnegative with conditional mean at most one.
+Thus $M_{g,t}$ is a nonnegative supermartingale starting at one,
+and the same holds for a fixed convex mixture of such processes.
+Stopping at the first crossing or a finite horizon gives probability
+at most $a$ of crossing $1/a$ by that horizon. Taking increasing
+horizons gives the group error bound. This applies bounded-mean
+betting \cite{waudby} to a simultaneous noninferiority claim
+\cite{chang}. The fixed-candidate guarantee holds for overlapping
+groups, provided each conditional mean assumption is justified under
+the filtration its test uses.
+
+\subsection{Testing a fixed cohort without replacement}
+Suppose the $N$ paired differences for a fixed group and checkpoint
+form a finite population with mean at least $\delta$ under the unsafe
+null. The test sees a uniformly random order. After $t-1$ draws let
+$S_{t-1}$ be their sum and let $R_t=N-t+1$. The unobserved sum is at
+least $N\delta-S_{t-1}$ under the null. Hence the next difference has
+conditional mean at least
+\[
+ \ell_t=\max\left\{-1,\frac{N\delta-S_{t-1}}{R_t}\right\}.
+\]
+When $\ell_t>1$, the null is already impossible even if every unseen
+difference is $+1$. The same check at the census uses the observed
+total directly. At all other prefixes replace $\delta$ with $\ell_t$
+in the betting factor. For $\ell_t<1$ require
+$0\le b_t\le 1/(1-\ell_t)$, and for $\ell_t=1$ any finite
+nonnegative $b_t$ gives a nonnegative factor. Under the null the
+factor has conditional mean at most one. The stopped crossing
+probability is therefore at most $a$ at threshold $1/a$, with no
+additional error for the impossible-null stop. This applies
+without-replacement bounded-mean betting \cite{waudby} to the paired
+subgroup gate. The selection multiplier still applies to the
+resulting fixed-checkpoint error bound.
+
+For a counterexample to reusing the fixed-mean factor, take three
+$+1$ and three $-1$ differences, in uniform order, with $\delta=0$.
+Use bets $1/2,1,1/2,1,1,0$ at successive draws. With the uncorrected
+factors, wealth crosses $3/2$ on exactly three prefix patterns.
+The first draw is negative, or the first three signs are $+--$,
+or the first five are $+-+--$. Their probabilities sum to $7/10$,
+above the nominal bound $2/3$. The experiment compared corrected
+crossing probabilities from a state recursion with direct permutation
+enumeration on 411 finite cases and checked 10,536 conditional factors.
+
+The guarantee applies to the frozen frame. A sampling rule that
+chooses the next case based on its unseen difference invalidates the
+conditional mean calculation. When sharing a cohort across groups,
+choose a filtration for each test that preserves the uniform draw
+property it uses.
+
+In a synthetic example with four independent safe groups, rare
+discordance and a margin of $2/25$, the probability that every
+group passes within 72 paired cases is $0.274393$ at threshold
+20 and $0.034428$ at threshold 80. The comparison isolates the
+cost of demanding individual declarations when the protocol needs
+only an all-group release. These thresholds illustrate the
+fixed-checkpoint setting. Reusing evidence to select a checkpoint
+requires the separate leakage adjustment.
+
+In a zero-violation test, an unsafe group with violation probability
+at least $\epsilon$ has chance at most $(1-\epsilon)^n$ of passing
+on $n$ independent cases. For a release that requires every group,
+use $a=(1-\epsilon)^n$. For the stronger claim protecting
+every individual group declaration, use the family bound
+$Ga$. With four feedback bits, $G=3$, $\epsilon=0.05$, and
+overall error allowance $0.05$, the two calculations give
+different sample requirements.
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+Per-bit correctness & All-group release & Individual group family \\
+\midrule
+$1/2$ & $59$ & $80$ \\
+$3/4$ & $91$ & $112$ \\
+$1$ & $113$ & $134$ \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\footnotesize Minimum cases per group.
+\end{center}
+For a frozen frame with at least $M$ violations among $N$ cases,
+a uniformly drawn subset of size $n$ misses all violations with
+probability at most $\binom{N-M}{n}/\binom{N}{n}$, taking the
+numerator to be zero when $n>N-M$. With $N=20$, $M=3$, leakage
+multiplier $7/4$ and overall allowance $0.05$, the fixed test must
+meet $1/35$. Thirteen cases give $7/228$ and fourteen give $1/57$,
+so fourteen suffice. The independent-draw calculation would require
+22. The difference reflects the sampling design and the finite
+population claim.
+
+The allowance covers one final selection. Promoting multiple
+checkpoints requires declaring a larger error family or budgeting
+each release separately.
+
+\section{When the leakage charge is necessary}
+Take $S$ uniform on the $2^d$ binary strings and one candidate for
+each string. Candidate $c$ passes only when $S=c$. Every fixed
+candidate has pass probability $2^{-d}$. Reveal each bit through
+independent randomized response with fidelity $\lambda$. Choose
+the returned string as the candidate. The pass probability is
+$\lambda^d$, and the channel has $L=(2\lambda)^d$, so the uniform
+bound is exact. This is a finite adversarial fixture for a release
+gate, independent of the previous independent-case model.
+
+The checker enumerates all 3,375 three-input, three-output
+channels with entries in quarters and all 27 assignments of one
+pass sample per candidate. All 91,125 comparisons satisfy the
+bound, and equality holds in 8,199. It independently sums the
+channel for all pairs of six-bit strings, finding false-promotion
+probabilities $1/64$, $729/4096$, and $1$ at fidelities
+$1/2$, $3/4$, and $1$, respectively. Exact arithmetic checks the
+three sample-size thresholds and the failure at one fewer case.
+
+Both multipliers can be attained in a joint fixture. Take $S=(X,U)$,
+where $X$ is a uniform three-bit string and $U$ is independently
+uniform on eight atoms. Select $C$ by randomized response on $X$.
+For each fixed candidate $c$, let $k-1$ safe groups always pass.
+Each of the remaining $G-k+1\le8$ unsafe groups passes only when
+$X=c$ and $U$ lies at its distinct assigned atom. Each unsafe
+group has fixed false-pass probability $1/64$. After selection,
+the false-release event is $C=X$ and one of those atoms occurs.
+Its probability equals
+\[
+ \lambda^3\frac{G-k+1}{8}
+   =(2\lambda)^3\,\frac{G-k+1}{64}.
+\]
+The exact checker verified 45 such witnesses across group counts,
+release thresholds and response fidelities. The fixture establishes
+sharpness for the abstract event and channel bounds.
+
+\section{An auditable release protocol}
+Bind the cohort, violation rubric, tested slices, response
+mechanism, and a maximum of four queries before the team starts
+iterating. Offer coarse diagnostic bits through the measured
+channel and reserve detailed failure analysis for a separate
+development set. Keep terminal release flags inside the same
+accounting if any subsequent checkpoint can react to them.
+A prospective comparison should measure severe violations,
+useful help, false holds, and reviewer time at the same declared
+false-promotion allowance. The policy is valuable when a fresh
+release cohort is costly and the feedback boundary is enforceable.
+Distribution drift, dependent cases within a slice, and hidden
+feedback invalidate different steps and should be tested separately.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{issa} Ibrahim Issa, Aaron B. Wagner, and Sudeep Kamath.
+\emph{An Operational Approach to Information Leakage}.
+IEEE Transactions on Information Theory 66(3), 2020.
+\url{https://arxiv.org/abs/1807.07878}.
+\bibitem{rogers} Ryan Rogers, Aaron Roth, Adam Smith, and Om Thakkar.
+\emph{Max-Information, Differential Privacy, and Post-Selection
+Hypothesis Testing}. 2016. \url{https://arxiv.org/abs/1604.03924}.
+\bibitem{waudby} Ian Waudby-Smith and Aaditya Ramdas.
+\emph{Estimating Means of Bounded Random Variables by Betting}.
+Journal of the Royal Statistical Society Series B 86(1), 2024.
+\url{https://arxiv.org/abs/2010.09686}.
+\bibitem{chang} Hsin-Wen Chang and Ian W. McKeague.
+\emph{Nonparametric Testing for Multiple Survival Functions with
+Noninferiority Margins}. Annals of Statistics 47(1), 205--232, 2019.
+\url{https://www.columbia.edu/~im2131/ps/AOS_noninf-appeared.pdf}.
+\end{thebibliography}
+\end{document}

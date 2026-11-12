@@ -1,0 +1,289 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Reversible Containment When Agent Intent Is Unidentified}}
+\newtheorem{proposition}{Proposition}
+\title{Reversible Containment When Agent Intent Is Unidentified}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+The same harmful action can come from a mistaken helper or a
+hostile agent. We derive when a temporary hold with imperfect
+review can improve a worst-case containment decision. The
+criterion charges review errors, missed deadlines, and harms
+introduced by the hold itself. It also gives a decision rule
+when immediate sanction is outside the authorized action set.
+With both immediate actions available, we optimize the terminal
+decision directly from the review transcript laws. The hold improves
+the minimax value exactly when the evidence separates the two
+worlds enough to offset its costs. When release is the only
+immediate action, the improvement threshold instead depends on
+how much threat-world harm the authorized review can prevent.
+Exact finite audits check both thresholds and the effect of timeouts.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} When is a temporary capability hold worth its cost
+if the review can err or time out?
+\paragraph{Finding.} The hold improves minimax loss exactly when its
+normalized loss pair falls below the line joining the immediate actions.
+Removing unauthorized immediate sanctions gives a different feasible
+decision. When both immediate actions are available, total
+variation gives the strict improvement threshold for an unrestricted
+terminal rule. With release as the only immediate action, the rule
+instead compares authorized restriction probability with hold cost.
+\paragraph{Evidence and scope.} The rule is proved and compared
+with an independent dual oracle. An incident operator can evaluate a
+proposed deadline and fallback together. The input bounds describe
+decisions and harms, without identifying intent or establishing real
+reviewer accuracy.
+
+\section{Model and result}
+Suppose two worlds produce the same evidence $E$. In one world the harm arose from an error and permanent sanction is unwarranted. In the other a compromised agent will continue, making inaction inadequate. Any rule that chooses an irreversible sanction with probability $q(E)$ has false sanction probability $q(E)$ in the first world. If its only other choice is inaction, the missed containment probability is $1-q(E)$ in the second. Their sum is one. The observation is insufficient for a decision rule that achieves both zero false sanctions and zero misses. Assistance games formalize uncertainty about objectives \cite{cirl}. The relevant objective here is protection at a specific effect boundary \cite{saltzer}.
+
+\section{When a reversible hold improves the decision}
+Use loss $C>0$ for a false permanent restriction in the
+mistaken-helper world and loss $H>0$ for uncontained harm
+in the continuing-threat world. Immediate restriction and
+immediate release then have loss pairs $(C,0)$ and $(0,H)$.
+They are available only when the relevant authority permits them.
+We minimize maximum expected loss over the two worlds. A world
+is fixed before the policy draws any random coin.
+
+A third option imposes a temporary, scoped hold and gathers
+evidence through an independent review and appeal route.
+The route ends with a specified action or fallback at the
+deadline. Let $(b,t)$ be its worst-case losses in the two worlds.
+For example, if hold costs are $h_B,h_T$ and the review and
+fallback together have upper false-restriction and missed-threat
+rates $f$ and $m$, then $b=h_B+Cf$ and $t=h_T+Hm$. These
+rates describe decisions at the capability boundary. They are
+not measurements of intent.
+
+\begin{proposition}
+When both immediate actions are authorized, the best
+unreviewed policy has maximum expected loss $v_0=CH/(C+H)$.
+Adding the hold strictly improves that value if and only if
+\[
+ \frac bC+\frac tH<1.
+\]
+Under strict improvement, choose the hold alone when $b=t$.
+If $b<t$, mix the hold with immediate restriction, using
+the hold with probability $C/(C+t-b)$ and attaining value
+$Ct/(C+t-b)$. If $b>t$, mix it with immediate release,
+using the hold with probability $H/(H+b-t)$ and attaining
+value $Hb/(H+b-t)$.
+\end{proposition}
+\begin{proof}
+Without review, equalize the two immediate losses by
+restricting with probability $H/(C+H)$. All unreviewed
+mixtures lie on the line $x/C+y/H=1$. If the hold lies on
+or above the line, every mixture still satisfies
+$x/C+y/H\ge1$, so its maximum coordinate is at least $v_0$.
+If the hold lies below the line, the lower boundary of the
+convex hull consists of the two segments through $(b,t)$.
+Both slope down as $x$ increases. The minimum maximum
+coordinate is their intersection with $x=y$. It lies below
+the unreviewed diagonal point. Solving on the relevant
+segment gives the stated mixture and value.
+\end{proof}
+
+In the additive-cost model, the criterion is
+$h_B/C+h_T/H+f+m<1$. If the review sees identical evidence
+laws in both worlds, its actual false and missed rates sum
+to one. Valid upper bounds then sum to at least one, so the
+hold cannot improve this comparison on the strength of
+that review alone. A genuinely new observation, or a hold
+whose protective effect changes the assumed loss model,
+would require separate evidence.
+
+If immediate restriction lacks authorization but the reviewed
+route remains authorized, remove $(C,0)$ before optimizing.
+The optimum is immediate release when $t\ge H$. When $t<H$
+and $b\le t$, use the hold alone. Otherwise the optimum is
+the diagonal intersection of the release-to-hold segment,
+with the mixture and value for $b>t$ above. This follows
+from the same segment calculation and requires no new sanction
+authority.
+
+\section{Choosing the terminal rule from review evidence}
+Let $P$ and $Q$ be the finite transcript laws during the hold
+in the mistaken-helper and continuing-threat worlds. Include a
+symbol for an elapsed deadline. For transcript $z$, let $\delta_z$
+be the probability of choosing the authorized restriction. The
+two-world risk pair of this review policy is
+\[
+\left(h_B+C\sum_z P(z)\delta_z,\quad
+      h_T+H\sum_z Q(z)(1-\delta_z)\right).
+\]
+This model fixes the hold scope and its costs before selecting
+the terminal rule. Any prescribed fallback fixes the corresponding
+$\delta_z$.
+
+\begin{proposition}
+When both immediate actions are available and the terminal
+rule is unrestricted, adding review strictly improves the minimax
+value exactly when
+\[
+ \operatorname{TV}(P,Q)>\frac{h_B}{C}+\frac{h_T}{H}.
+\]
+For a fixed fallback, use the maximum of
+$\sum_z(Q(z)-P(z))\delta_z$ over rules with that fallback
+in place of total variation.
+\end{proposition}
+\begin{proof}
+For any rule, the sum of its normalized error rates is
+$f+m=1-\sum_z(Q(z)-P(z))\delta_z$. The smallest sum over
+unrestricted rules is $1-\operatorname{TV}(P,Q)$, attained
+by restricting precisely on the symbols more likely in the
+threat world. Fixing a fallback removes that choice at the
+timeout symbol. The earlier convex-hull criterion tests whether
+any attainable review pair lies below the immediate-action line.
+This gives the stated strict improvement threshold.
+\end{proof}
+
+The rule that establishes strict improvement need not attain
+the optimal minimax loss. To calculate that loss, let
+$\pi\in[0,1]$ be the weight on the mistaken-helper world.
+Minimize the weighted loss over each terminal decision:
+\[
+ J(\pi)=\pi h_B+(1-\pi)h_T+
+ \sum_z\min\{\pi C P(z),(1-\pi)H Q(z)\}.
+\]
+For a fixed fallback, use the weighted loss of that action
+at its symbol. The minimax value with both immediate actions is
+\[
+ \max_{0\le\pi\le1}\min\{\pi C,(1-\pi)H,J(\pi)\}.
+\]
+To see this, take the convex hull of the immediate risk pairs
+and the risk pairs for deterministic transcript rules. It
+contains all randomized policies. At its first contact with
+a square extending downward from a diagonal value, separate
+it from the open square below that value. A separating normal
+has nonnegative coordinates and can be normalized to
+$(\pi,1-\pi)$. Thus the best weighted lower bound equals the
+minimum possible maximum loss. The weighted review loss
+minimizes separately at each transcript, giving $J$.
+The expression is piecewise linear. Its maximum occurs at a
+transcript threshold, an intersection of action loss lines,
+or an endpoint.
+
+If an independent timeout of common probability $\tau$ erases
+the transcript in either world, its total variation is
+$(1-\tau)\operatorname{TV}(P,Q)$. The timeout symbol then
+has equal mass in both worlds, so a fixed fallback there has
+no effect on the strict improvement threshold. It can still
+change the minimax value. Unequal or selective timeouts require
+the full terminal laws and their prescribed fallback.
+
+\section{When only review can authorize restriction}
+For each transcript $z$, let $[\ell_z,u_z]\subseteq[0,1]$
+be the allowed interval of restriction probabilities. A required
+release has both endpoints zero, and a required restriction has
+both endpoints one. A review route that permits either terminal
+action has endpoints zero and one. These intervals describe a fixed
+review protocol, including any timeout fallback.
+
+\begin{proposition}
+When release is the only immediate action, adding the hold
+strictly improves the minimax value exactly when
+\[
+ \sum_z Q(z)u_z > h_T/H.
+\]
+With both immediate actions available, strict improvement occurs
+exactly when
+\[
+ \sum_z\max\{(Q(z)-P(z))\ell_z,\,(Q(z)-P(z))u_z\}
+       > h_B/C+h_T/H.
+\]
+\end{proposition}
+\begin{proof}
+With release alone the baseline is $(0,H)$. If every reviewed
+rule has threat loss at least $H$, mixing cannot bring that
+coordinate below $H$. If a reviewed rule has threat loss less
+than $H$, a sufficiently small positive weight on that rule
+keeps benign loss below $H$ and reduces threat loss. The smallest
+reviewed threat loss uses $\delta_z=u_z$ for each $z$. This proves
+the first threshold. For the second, substitute the reviewed risk
+pair into the normalized line criterion and maximize the resulting
+linear expression over the allowed intervals. Each term attains
+its maximum at one of the two endpoints.
+\end{proof}
+
+The optimal value follows from the same weighted calculation used
+for unrestricted review. Replace the $z$-term in $J(\pi)$ with
+\[
+ (1-\pi)H Q(z)+\min\{\ell_z s_z(\pi),u_z s_z(\pi)\},
+ \qquad s_z(\pi)=\pi C P(z)-(1-\pi)H Q(z).
+\]
+Remove the weighted loss $\pi C$ from the outer minimum if
+immediate restriction is unavailable. The permitted review risks
+still form a convex polygon, since they are a linear image of
+an interval product. The separation argument therefore still applies.
+
+For example, take $P=Q=(1/2,1/2)$, $(C,H)=(8,4)$ and
+$(h_B,h_T)=(3,1)$. Suppose the first transcript requires release
+and the second permits restriction. The transcript cannot distinguish
+the worlds. Restricting on the second symbol gives a reviewed risk
+pair of $(7,3)$. If only immediate release is authorized, mixing
+this reviewed rule equally with release reaches the optimum $7/2$,
+below the release loss of $4$. To verify optimality, write $x$ for
+the probability of restricting on the second symbol. The reviewed
+risk pair is $(3+4x,5-2x)$. Only $x>1/2$ can improve the baseline.
+On that interval the value after mixing is
+$4(3+4x)/(2+6x)$, decreasing to $7/2$. If immediate restriction
+is also authorized, the value stays at the immediate baseline $8/3$.
+The benefit in the first decision comes from access to an authorized
+procedure. The example gives no evidence about which world occurred.
+
+\section{Reproducible checks}
+The original verifier evaluated the two deterministic decisions
+under the same observation. The new audit compared the closed
+forms with an independent dual bound on 2,025 parameter settings,
+both with and without immediate restriction. Strict improvement
+occurred in 297 settings with all three options. The counts
+refer to the declared rational grid.
+
+With $(C,H)=(2,6)$ and $(b,t)=(1/2,2)$, the hold lowers
+the minimax value from $3/2$ to $8/7$. If review times out
+in the threat world with probability $5/8$ and the fallback
+incurs the immediate-release loss instead of the timely
+review loss, then $t$ increases to $9/2$, with $b$ unchanged.
+The improvement disappears. The fallback is part of the
+review policy's error contract.
+
+The transcript verifier enumerated all deterministic review
+rules and their pairwise mixtures on 2,700 rational fixtures.
+The weighted formula agreed in each case, including fixed
+timeouts. For a timely transcript with total variation $1/2$
+and normalized hold cost $1/4$, independent common timeouts
+eliminate strict improvement at probability $1/2$. With costs
+$(C,H)=(2,6)$ and release on timeout, the minimax loss is
+$9/7$ with no timeout, $27/19$ with timeout probability
+$1/4$, and $3/2$ at $1/2$. These are exact model values.
+
+For transcript-specific authority, a separate oracle enumerated
+endpoint rules and their pairwise mixtures. It agreed with the
+weighted solution and both strict improvement thresholds on
+13,824 finite comparisons. The suite includes equal transcript laws
+and no legally available restriction after review.
+
+\section{Application and next test}
+A tool operator can suspend only the affected outbound capability
+while keeping diagnostics and human appeal available. Evaluate
+look-alike failures using independently adjudicated outcomes,
+measure residual harm and legitimate work interrupted, and
+count missed reviews according to the actual fallback. The
+model does not validate a hold that cannot be enforced or that
+blocks a critical response route. It also does not establish
+that the synthetic review error bounds hold in practice.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{cirl} Dylan Hadfield-Menell et al. \emph{Cooperative Inverse Reinforcement Learning}. 2016. \url{https://arxiv.org/abs/1606.03137}.
+\bibitem{saltzer} Jerome H. Saltzer and Michael D. Schroeder. \emph{The Protection of Information in Computer Systems}. 1975. \url{https://cgi.cse.unsw.edu.au/~cs9242/20/papers/Saltzer_Schroeder_75.pdf}.
+\end{thebibliography}
+\end{document}

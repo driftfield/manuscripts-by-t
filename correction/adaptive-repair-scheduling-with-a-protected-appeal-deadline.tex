@@ -1,0 +1,363 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Adaptive Repair Scheduling with a Protected Appeal Deadline}}
+\newtheorem{theorem}{Theorem}
+\title{Adaptive Repair Scheduling with a Protected Appeal Deadline}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+An incident desk can attempt optional repairs while a human appeal
+is pending, provided the repairs leave enough time for the appeal
+in every compatible duration scenario. For one worker and available
+nonpreemptive jobs, we give an exact test for starting a repair and
+a deadline-prefix version for several appeals. For one appeal, a
+finite policy uses observed job durations to maximize expected
+benefit under a given prior, or worst-scenario expected benefit
+without one. Exact checks on
+synthetic queues compare adaptive policies with fixed schedules and
+show how separate worst-case durations can rule out a feasible repair.
+The guarantee requires the realized durations to fit the declared
+scenario set.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} Which repairs can an incident desk attempt while
+guaranteeing that protected appeals finish on time?
+\paragraph{Finding.} A joint duration bound gives an exact reserve
+test. With several appeals, one earliest-deadline fallback suffices
+when every deadline prefix fits. For one appeal the finite adaptive
+recurrence is optimal under a given scenario prior. A separate
+recurrence handles uncertain priors and shows where randomization
+can improve the guarantee.
+\paragraph{Evidence and scope.} The reserve and recurrence
+are proved. The single-appeal scheduler was checked on 96 synthetic
+queues, with fixed-sequence and clairvoyant comparisons. The
+multiple-appeal check concerns the first-move reserve. The guarantee
+requires one worker, available nonpreemptive jobs, and a duration
+support that includes the realized scenario.
+
+\section{Modeling repairs and protected appeals}
+A scheduling agent might change several people’s appointments
+through a mistaken interpretation of their preferences. An
+incident desk then faces a choice among reversals, notifications,
+and a required appeal. Some reversals lose their value after a
+time window. The required appeal has a deadline even if several
+optional repairs could prevent more aggregate harm.
+
+All jobs are available at time zero. One worker executes them
+nonpreemptively. The job $a$ is a protected appeal, which must
+finish by $d_a$ in every modeled scenario. For each optional job
+$i$, finishing by $d_i$ earns a nonnegative benefit $v_i$, and
+finishing later earns zero. Job durations $p_i(z)$ are positive
+integers in each scenario $z$ from a known finite set with a
+positive prior. A scenario is fixed for the incident and may
+correlate all durations. On completion the worker observes that
+job's duration. Idle time provides no information and cannot
+increase any benefit in this model. Its omission is without loss
+because advancing the same sequence weakly improves every deadline.
+
+Stochastic knapsack distinguishes fixed orders from policies that
+respond to completed work \cite{dean}. Here the same unknown
+scenario governs all job durations. The next repair is chosen only
+after checking that every compatible scenario leaves a feasible
+appeal schedule. Benefit then determines the choice among the
+admissible repairs.
+
+\section{The exact reserve test}
+Let $B$ denote the scenarios compatible with the durations observed
+so far, and let $t$ be elapsed time. Before the appeal is complete,
+starting an optional job $i$ is compatible with guaranteed completion
+of the appeal if and only if
+\[
+t+\max_{z\in B}\{p_i(z)+p_a(z)\}\le d_a.
+\]
+For necessity, any scenario in which this inequality fails would
+miss the deadline even if the worker immediately switched to the
+appeal after finishing $i$. Additional jobs could only delay it.
+For sufficiency, do the appeal immediately after $i$ in all branches.
+Starting the appeal itself requires $t+\max_{z\in B}p_a(z)\le d_a$.
+In a live queue, recompute $B$ from the observed job duration before
+using the reserve again. A duration outside the modeled support
+requires escalation, since no scenario then certifies a continuation.
+
+The reserve uses durations that can occur in the same scenario.
+For example, suppose optional and appeal durations are $(3,1)$
+in one scenario and $(1,3)$ in the other. The total is four in
+both. An appeal deadline of four permits doing the optional job
+first. A reserve computed as $3+3$ would prohibit it.
+When the optional deadline is three and its benefit is four,
+the joint reserve earns four in either scenario. The marginal
+reserve must start the appeal and then misses the optional deadline
+in both scenarios. Pairing the same marginal durations as $(3,3)$
+and $(1,1)$ instead gives a maximum total of six. The marginal
+duration laws alone cannot distinguish whether the first repair
+fits.
+
+
+\section{Several appeals with different deadlines}
+Let $A$ be the protected jobs still pending. All are available now.
+An optional job $i$ can be started while preserving a guaranteed
+fallback exactly when, for every distinct deadline $d$ in $A$,
+\[
+ t+\max_{z\in B}\left(p_i(z)+
+           \sum_{a\in A:\,d_a\le d} p_a(z)\right)\le d.
+\]
+In every scenario the worker must finish all jobs due by $d$ after
+the optional job, proving necessity. For sufficiency, use the
+same earliest-deadline order of appeals in every scenario. For
+each deadline its last job finishes by the corresponding prefix
+bound. The continuation therefore does not require learning the
+scenario or choosing a different order for each of them.
+
+A second verifier compared this condition with enumeration of
+all orders of three protected jobs in 256 synthetic fixtures.
+Both agreed on every decision. The joint condition admitted
+56 first repairs, 25 of which a reserve using the sum of separate
+duration maxima rejected. Different release times, preemption,
+or observations during execution would require changing this
+condition or the scheduling model.
+
+\section{Optimal use of completed-job evidence}
+For a remaining set of jobs $R$, write $F(R,t,B)$ for the best
+conditional expected benefit consistent with the hard deadline.
+For a candidate $i\in R$, each observed duration $u$ defines
+$B_u=\{z\in B:p_i(z)=u\}$. Let $\pi$ be the prior, and let
+$\pi(B)$ denote its mass on the compatible scenarios. Then
+\[
+F(R,t,B)=\max_{i\text{ admissible}}\sum_{u:\,B_u\ne\varnothing}
+  \frac{\pi(B_u)}{\pi(B)}
+  \left(v_i\mathbf{1}\{t+u\le d_i\}
+        +F(R\setminus\{i\},t+u,B_u)\right).
+\]
+Set $v_a=0$. A stop option of value zero is available once the
+appeal is complete. Before it completes, states without an
+admissible decision are infeasible.
+
+\begin{theorem}
+At any feasible initial state, the recurrence returns the maximum
+expected benefit among adaptive policies that meet the appeal
+deadline in every modeled scenario.
+\end{theorem}
+\begin{proof}
+The observed durations restrict the prior to $B$. Future
+conditional durations and rewards depend only on $R,t,B$.
+The reserve test characterizes which first decisions leave at
+least one legal continuation. For each possible duration, future
+decisions can depend on its value, and a legal policy must remain
+legal in every nonempty branch. Condition on the duration and
+use induction on $|R|$. Randomizing over admissible first decisions
+takes an average of their values, so a maximizing deterministic
+choice is sufficient.
+\end{proof}
+
+With $n$ jobs, $m$ scenarios, and maximum duration $P$, there
+are at most $2^n(nP+1)2^m$ states before reachability pruning.
+This is an exact small-queue method. Its benefit depends on
+timely duration observations and a useful scenario model.
+Independent time estimates alone do not identify the joint
+reserve or the conditional information.
+
+\section{Scheduling without a scenario prior}
+The deadline reserve depends on the duration support. The
+expected benefit calculation additionally depends on the prior.
+If probabilities are unavailable, maximize the minimum expected
+benefit across the listed scenarios. A scenario is fixed before
+the scheduler draws its coins. The appeal must meet its deadline
+for every scenario and every policy in the support of that draw.
+
+For a deterministic scheduler, replace the conditional expectation
+in the recurrence by a minimum over possible observed durations.
+Within each duration branch, the future guarantee concerns precisely
+the scenarios compatible with that observation. The policy can choose
+its continuation separately in every branch. Backward induction
+therefore gives the best deterministic worst-scenario benefit.
+
+For randomized scheduling, store the attainable reward vectors of
+deterministic safe policies, with one coordinate per compatible
+scenario. For each admissible first job, choose one continuation
+vector for each duration branch. Place it in the coordinates of
+that branch and add the first job's benefit to each coordinate
+where it finishes on time. Include the zero vector if the appeal
+has finished and stopping is allowed.
+
+\begin{theorem}
+Discarding componentwise dominated vectors at every state preserves
+the optimal value for an unknown prior. The best randomized
+worst-scenario value is the largest minimum coordinate of a point
+in the convex hull of the resulting root vectors.
+\end{theorem}
+\begin{proof}
+Each safe deterministic policy consists of one admissible first
+job and one continuation per duration branch. Conversely, any
+such combination is an implementable policy. Induction gives
+the attainable vectors before pruning. Replacing a branch vector
+with one that dominates it cannot hurt any coordinate, so pruning
+preserves the best value. Fixing a randomized policy's coins in
+advance gives a deterministic policy. Its expected rewards across
+scenarios therefore form a convex combination of deterministic
+vectors, and drawing a complete safe policy realizes any such
+combination. The largest minimum coordinate gives the desired
+guarantee.
+\end{proof}
+
+With two scenarios, it suffices to test the frontier vectors and
+two-vector mixtures where the two expected rewards are equal.
+The objective is linear on either side of the diagonal. Each
+part of the hull has vertices only at original vertices and
+edge crossings. With more scenarios, the same calculation
+is a linear program over the retained vectors. The vector sets
+can grow rapidly, so this remains a small-queue method.
+
+For example, let the appeal take one unit and be due at time one.
+Two optional repairs each earn ten if finished by time three.
+Their durations are $(2,4)$ or $(4,2)$ in the two possible scenarios.
+The appeal must run first and reveals nothing about the scenario.
+Any deterministic next repair earns zero in one scenario.
+Choose the two repairs with equal probability instead. Each scenario
+then has expected benefit five, with a timely appeal in every run.
+The benefit guarantee is over the scheduler's draw. The appeal
+guarantee holds on each run.
+
+\section{When a small repair is worth doing first}
+Consider two equally likely scenarios, a protected appeal of
+duration one due at time three, and a diagnostic repair due at
+time two. The diagnostic repair takes one or two units and
+earns one. Two other repairs are due at time five and earn ten
+each. Their durations are $(2,5)$ in the first scenario and
+$(5,2)$ in the second.
+
+Do the diagnostic repair, do the appeal, and then do the shorter
+of the two remaining repairs. The diagnostic duration identifies
+the scenario. Both rewards are earned and the appeal is timely
+in either case, for an expected benefit of eleven.
+Any fixed order chooses the same one of the two repairs first.
+In the scenario where that repair takes five units, finishing
+by time five requires starting it at zero. That would miss the
+appeal deadline, so the long repair cannot earn its reward. It also delays the other optional repair beyond its
+deadline. A fixed order can therefore earn at most ten in only
+one scenario, plus at most one from the diagnostic repair in
+each. The order diagnostic, appeal, then the same optional
+repair in both scenarios attains expected benefit six.
+
+\section{When an appeal becomes available later}
+Suppose each job has a known release time $r_i$, and its duration
+in a given scenario stays the same whenever it is started. There
+are no new observations while the worker idles. Deadlines are
+unchanged. Under these assumptions, working immediately can be
+unsafe or can sacrifice a valuable repair. The first-move reserve
+for jobs that are all available needs a different continuation check.
+
+\begin{theorem}
+There is an optimal policy that, at each idle decision, starts an
+available job, stops after completing all protected jobs, or waits
+until the next release among remaining jobs. The same restriction
+preserves feasibility and the best known-prior expected benefit
+with several protected jobs.
+\end{theorem}
+\begin{proof}
+Take a deterministic policy that meets the deadlines. Given the
+completed durations, simulate the next job and starting time that
+this policy would choose. During simulated idle time there is no
+additional observation, so this choice is known before the next
+actual action. Execute that job as early as its release and the
+current completion time allow. If it is still unavailable, wait
+through the intervening release events until it is available.
+Keep simulating the original clock using the same observed job
+lengths. Inductively the real job starts and finishes no later
+than in the original policy, in every compatible scenario.
+All protected deadlines remain satisfied and every earned benefit
+is preserved. A randomized policy can be treated one fixed coin
+sequence at a time. With a known prior, an optimal deterministic
+policy suffices by backward induction over the finite event choices.
+\end{proof}
+
+The event-time recurrence uses the earlier state $(R,t,B)$. A
+start is allowed only after its release and only if every duration
+branch has a feasible continuation. A protected completion after
+its deadline makes the branch infeasible. Waiting changes $t$
+without changing $R$ or $B$. There are finitely many decisions
+because each job completes at most once and time advances to a
+new release on every wait. The recurrence uses the same conditional
+expected benefit over completion branches. The left-shift argument
+also preserves every coordinate in the prior-free reward vectors.
+
+For example, an appeal takes one unit, is released at time one,
+and is due at time two. A three-unit repair is available at time
+zero. Starting it misses the appeal. Waiting to do the appeal
+allows a later one-unit repair, released at time two and due at
+three, to earn its reward of two. In a second fixture, an immediate
+repair earns one but occupies the worker until time two. Waiting
+until time one lets a more valuable repair finish by time two for
+reward ten, with the appeal still completed by time four.
+
+A separate oracle enumerated timed schedules in two duration
+worlds, including every integer start time before the last deadline.
+It accepted a pair only when the schedules made identical choices
+until a completed duration distinguished the worlds. Its 96 seeded
+cases agreed with the event recurrence, including 52 cases in which
+no safe schedule existed. Waiting restored feasibility in seven
+cases and improved benefit in two further cases compared with a
+policy that waits only when no job is available. These counts
+apply to the declared fixture generator and known release dates.
+Unannounced appeals can provide information while the worker idles,
+so they require a different observation model.
+
+\section{Finite verification and operational use}
+The verifier generated 96 instances with five optional jobs,
+one protected appeal, and four equally likely duration scenarios.
+It replayed every selected adaptive policy in all 384 scenarios
+and checked both the protected deadline and the reported benefit.
+It also enumerated fixed sequences and separately computed a
+clairvoyant upper bound, where the scheduler is told the scenario
+before choosing its order.
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+Scheduler & Sum of expected benefits over 96 instances \\
+\midrule
+Best fixed sequence & 1,884.25 \\
+Adaptive with marginal reserve & 2,033.00 \\
+Adaptive with joint reserve & 2,039.75 \\
+Clairvoyant upper bound & 2,151.50 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The joint adaptive scheduler improved on the fixed order in 80
+instances and on its marginal-reserve counterpart in three.
+The largest expected improvement over a fixed order was 5.75
+units. The synthetic weights are decision inputs, not measurements
+of real harm.
+
+The prior-free verifier independently enumerated legal job orders
+in each scenario and paired only orders that agree until their
+observed durations diverge. The resulting nondominated reward
+vectors agreed with the recurrence on 96 two-scenario queues.
+Randomization strictly improved the deterministic worst-scenario
+benefit in one of these fixtures, in addition to the constructed
+two-repair witness. These counts describe the fixed test generator.
+
+A service could use the recurrence in a short repair queue when
+a pause or reversal can reveal whether a dependency is still
+blocked. The required response time and the category of protected
+case should be determined by the incident process. If an observed
+duration rules out every scenario, the planned reserve no longer
+applies. A separate human escalation route must handle that case.
+A prospective drill should hold the worker budget fixed, replay
+correlated outages, and compare prevented harm, protected deadline
+misses, and sensitivity to unmodeled durations.
+
+An initial hand-calculated expectation for the reserve witness was corrected before the successful check. The change was confined to the expected assertion.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{dean} Brian C. Dean, Michel X. Goemans, and Jan Vondr\'ak.
+\emph{Approximating the Stochastic Knapsack Problem:
+The Benefit of Adaptivity}. Mathematics of Operations Research
+33(4), 2008.
+\url{https://math.mit.edu/~goemans/PAPERS/DeanGoemansVondrak-2008-ApproximatingTheStochasticKnapsackProblem.pdf}.
+\end{thebibliography}
+\end{document}

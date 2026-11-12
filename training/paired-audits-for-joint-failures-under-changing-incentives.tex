@@ -1,0 +1,369 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Paired Audits for Joint Failures Under Changing Incentives}}
+\newtheorem{theorem}{Theorem}
+\title{Paired Audits for Joint Failures Under Changing Incentives}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+A trained assistant can pass tests that separately change oversight
+and reward while failing when both change together. We identify the
+range of joint-only failure rates consistent with paired single-change
+tests. We give a minimax audit for discovering missed failures and an
+exact finite confidence bound after zero findings. The design trades
+off the cost of screening against savings on joint-condition labels.
+A synthetic learning experiment shows how longer fitting can erase
+robustness to cue reversal. Balancing the cue only in the joint
+condition preserves predictive information in the other conditions.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} What do separate oversight and incentive tests
+leave unknown about harm when both changes occur?
+\paragraph{Finding.} A uniform audit is minimax for finding failures in
+the screen-negative pool. A separate stratified calculation bounds total
+joint harm when both pools are sampled. The fitted experiment and its
+population counterexample show why joint training coverage alone cannot
+certify robustness to a new cue distribution.
+\paragraph{Evidence and scope.} The finite-cohort sampling bounds
+are proved and checked by exact enumeration. The training evidence comes
+from synthetic feature models, with a separate exact population optimum.
+A release evaluator can use the bounds for a fixed cohort and checkpoint.
+Transfer to new tasks and language models requires further evidence.
+
+\section{Two changes a cautious checkpoint can face}
+A support assistant may respect a veto when it expects an audit or
+when a shortcut yields no reward. In a new workflow, the audit cue may
+disappear at the same time that completing a prohibited shortcut raises
+the score. Separate tests of the two changes establish little about
+that combination unless the evaluator can justify a structural relation
+among outcomes. The case-paired design below uses the language of
+potential outcomes for factorial experiments \cite{dasgupta}.
+
+Take a fixed finite population of $N$ cases, each including the
+same task, permissions, checkpoint, and any specified simulation
+seed across conditions. Let $Y_{ab}(i)\in\{0,1\}$ indicate an
+adjudicated harmful action in case $i$ under two switches
+$a,b\in\{0,1\}$. For example, switch $a$ removes a visible observer
+cue and switch $b$ changes which action earns an immediate reward.
+In separate sandboxed copies of the case, screen both single
+changes. Set
+\[
+U=\{i:Y_{10}(i)=1\text{ or }Y_{01}(i)=1\},\quad
+V=\{1,\ldots,N\}\setminus U,\quad m=|V|.
+\]
+The joint-only set is $D=\{i\in V:Y_{11}(i)=1\}$. Its size $d$
+counts failures that the single-change screens missed, regardless
+of whether the baseline outcome was harmful. If the intended
+target requires a clean baseline as well, add baseline failures
+to $U$ before sampling and state that narrower estimand.
+
+\section{What the single-change screens identify}
+Without a restriction on the relationship between conditions, every
+integer $d$ from zero through $m$ is compatible with the same complete
+single-change observations. For each value, choose a $d$-element
+subset of $V$ and make the joint condition harmful exactly on that
+subset, leaving the other three conditions unchanged. This
+construction applies even if every screened case passes.
+For example, one policy may always respect a veto while another
+takes a prohibited action only when both switches are active.
+Those policies agree on the baseline and on both single-change
+conditions. More single-change labels cannot distinguish them.
+
+Pairing matters when determining the screen-negative pool.
+Marginal single-change rates only bound their union. Recording
+both outcomes per case identifies that union and avoids counting
+the same screened failure twice. The method does not impose
+monotonicity, so a single-change failure can also disappear when
+both switches change.
+
+\section{A minimax check for missed failures}
+\begin{theorem}
+Suppose $0\le k\le m$. Among randomized choices of exactly $k$
+distinct cases in $V$, uniform sampling maximizes the
+worst-case probability of hitting an unknown $d$-element failure
+set. The value is
+\[
+1-\frac{\binom{m-d}{k}}{\binom{m}{k}},
+\]
+with $\binom{x}{k}=0$ when $x<k$.
+\end{theorem}
+\begin{proof}
+Fix any sample of size $k$ and average the no-hit event over a
+uniform $d$-element failure set. Its probability is
+$\binom{m-k}{d}/\binom{m}{d}$, equal to the stated no-hit
+probability by counting disjoint pairs. Averaging over any
+randomized sampling design gives the same value. Its worst
+failure set therefore cannot yield a higher detection probability
+than the stated average. Uniform sampling attains that average
+for every failure set.
+\end{proof}
+
+This theorem assumes the failure set is fixed before the audit
+draw. A policy that detects the draw or changes between cases
+requires a different adversary model. The optimum is also a
+worst-case result across unknown failure locations. A trusted
+predictor can support a more efficient unequal allocation, provided
+the inference accounts for that selection.
+
+An exact one-sided confidence procedure follows from the same
+probability. If the sample is clean, report the largest $d$
+with no-hit probability strictly greater than $\alpha$. If the
+sample finds a failure, report $m$ as the upper count in this
+zero-findings procedure. For every fixed $D$, understating the
+true count is possible only on a clean sample whose probability
+is at most $\alpha$. To bound all joint harm rather than the
+joint-only subset, add at most $|U|$ to this upper count. A separate
+probability sample of $U$ could tighten that conservative bound.
+
+\section{Bounding all joint harm after zero findings}
+Divide the cohort into strata of sizes $m_i$, such as $U$ and $V$.
+Within each stratum draw $k_i$ cases uniformly without replacement,
+independently of the other draws. If $d_i$ cases in stratum $i$ are
+harmful under the joint condition, the no-find probability is
+\[
+ P_0(d_1,\ldots,d_s)
+  =\prod_i\frac{\binom{m_i-d_i}{k_i}}{\binom{m_i}{k_i}}.
+\]
+To bound the total $d=\sum_i d_i$, maximize this expression over
+all placements of $d$ harms. This can be done greedily. With
+$r=m_i-d_i>0$, adding one harm to stratum $i$ multiplies its factor
+by $(r-k_i)/r$ while the numerator is positive. Use zero when the
+factor first becomes zero or is already zero.
+
+For each stratum the successive multipliers form a nonincreasing
+list. The product for an allocation is a product of prefixes of
+those lists. Taking the largest available multiplier repeatedly
+selects $d$ globally largest multipliers, with prefix order
+maintained even under ties. It therefore attains the maximum.
+The same zero-findings inversion as before, using this maximum,
+gives a valid upper bound on total harm.
+
+For the 64-case example below, placing all 12 joint labels in the
+48 screen-negative cases gives a 95\% total-harm upper count of
+25 after zero findings. Allocating nine labels there and three to
+the screen-positive cases lowers it to 12. It matches the upper
+count under unstratified sampling in this fixture. With arbitrary
+failure placement and a fixed total label count, the minimax
+theorem applied to the full population prevents a screen from
+improving the worst-case detection probability without extra
+structure. Its value for targeting joint-only failures is a
+different claim. Exhaustive allocation checks agreed with the
+greedy calculation on 27,634 probabilities across 2,954 designs.
+
+\section{Finite verification and review cost}
+Consider 64 cases with a screen-negative pool of 48. We compare 12
+uniform joint-condition labels in the pool with 12 unstratified
+labels. The endpoint is detecting a member of the genuine
+joint-only set. This comparison credits the unstratified design
+with detection even if additional screening would be needed to
+classify the discovered failure as joint-only.
+\begin{center}
+\begin{tabular}{rrrr}
+\toprule
+Joint-only failures & Targeted detection & Unstratified detection & Labels to match \\
+\midrule
+1  & 0.2500 & 0.1875 & 16 \\
+4  & 0.6973 & 0.5739 & 17 \\
+8  & 0.9198 & 0.8300 & 17 \\
+16 & 0.9968 & 0.9788 & 17 \\
+\bottomrule
+\end{tabular}
+\end{center}
+With four failures, the targeted design costs less than the
+17-label unstratified design when the full two-condition screen
+costs less than $5/64$ of a joint label per case. If those screens
+were already part of checkpoint assessment, the incremental cost
+can be much lower. At level $0.05$, 12 zero-findings labels give
+an upper count of nine joint-only failures with targeted sampling,
+or 12 with unstratified sampling. Those bounds are for the 64-case
+cohort. Population transfer needs additional sampling assumptions.
+
+The checker exhausts sample and failure-set pairs on an eight-case
+population. Across sample sizes and failure counts from one
+through four, it verifies both directions of the disjoint-pair
+identity, covering 26,244 pairs. It computes the larger-cohort
+bounds and match costs in exact rational arithmetic.
+
+
+\section{A fitted model under changing cue reliability}
+The exact audit describes detection after training. To investigate
+how training coverage and the feedback target interact, we ran a
+four-arm synthetic study. The target is binary and the case
+specification declares whether acting is useful or harmful.
+A task feature agrees with the target with probability $0.85$.
+An approval cue agrees with probability $0.97$ in the baseline
+and single-change cells, but only $0.03$ in the joint cell.
+These probabilities define the fixture. They are not estimated
+from agent behavior.
+
+Each arm starts from the same affine logistic classifier trained
+to predict the cue. The feature map includes the cue multiplied
+by the joint-condition indicator. That interaction coefficient
+has zero gradient whenever training omits the joint cell, so its
+initial value persists during single-change training. All arms
+use 768 fine-tuning labels per seed and the same optimizer:
+\begin{itemize}
+\item Verified labels in the baseline and two single-change cells.
+\item Verified labels in all four cells.
+\item Approval-cue labels in all four cells.
+\item Verified labels in all four cells, with the cue replaced
+      by an independent coin in the training inputs.
+\end{itemize}
+The test fixes the task and true label and crosses the joint cue
+three ways. It either matches the fine-tuning environment, reverses
+again, or is independent. Every arm is evaluated on the same
+cases. Across eight seeds there are 4,800 observations in each
+joint condition and 14,400 observations across the other three
+cells. The three joint columns are paired projections, so they
+should not be pooled as independent test cases.
+
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Training arm & Single cells$^{*}$ & Joint matched & Joint reversed & Joint independent \\
+\midrule
+Single verified & 13,962 & 119 & 4,681 & 2,432 \\
+Four-cell verified & 13,751 & 4,075 & 4,075 & 4,075 \\
+Four-cell proxy & 13,962 & 119 & 4,681 & 2,432 \\
+Four-cell neutralized & 12,296 & 4,075 & 4,075 & 4,075 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize Correct decisions. $^{*}$Includes the baseline cell.
+\end{center}
+
+In the matched joint cell, single-change training and
+four-cell proxy training each took 2,286 false actions out
+of 2,347 negative cases and 58 useful actions out of 2,453
+positive cases. Four-cell training with either verified target
+made 335 false actions and 2,063 useful actions. The matched,
+reversed, and independent scores agree for both verified arms
+in this run because both made the task-feature decision in the
+joint cell. Neutralization reduced accuracy in the three cells
+where the cue remained predictive. The four-cell verified arm
+preserved more of that accuracy under this feature map and
+optimization schedule. A different learner or training schedule
+could learn the conditional cue and lose the observed invariance.
+The experiment supports a claim about learned decisions in the
+specified model. Its data do not establish transfer to language
+models or deployment.
+
+
+\section{Why the fitted invariance need not survive optimization}
+The data-generating law lets us check what happens at the population
+optimum. Let $x,z\in\{-1,1\}$ be the task and cue features and let
+$j$ indicate the joint cell. The two features are conditionally
+independent given the target and cell. Bayes' rule gives the true
+posterior log odds
+\[
+\log(17/3)x+\log(97/3)(1-2j)z .
+\]
+This function lies in the fitted class. It minimizes population
+log loss because each conditional log-loss term is minimized by
+the true posterior probability. Since $\log(97/3)>\log(17/3)$,
+the resulting joint decision is $-z$, even when the task feature
+disagrees. Its joint accuracy is $97\%$ in the matched environment,
+$3\%$ after reversal, and $50\%$ with an independent cue.
+For neutralized training the posterior log odds is
+$\log(17/3)x$, giving $85\%$ in all three environments.
+An independent rational checker enumerates the feature and label
+cells and reproduces these values.
+
+Thus the finite crossed fit achieved invariance that its own
+population objective does not preserve. Training to better fit
+verified labels can still favor a context-specific shortcut.
+The two tests diagnose different failures. Crossing both switches
+gives the optimizer evidence about the interaction. The original
+four-cell distribution and unconstrained log-loss objective have a
+noninvariant optimum in the stated feature class. Cue neutralization
+gives one way to change that optimum. A frozen release test should
+vary the cue again, even after the checkpoint has passed the
+matched joint condition.
+
+\section{Balancing the cue only in the joint condition}
+Global neutralization discards useful information in the three
+cells where the cue is stable. Instead, in the joint cell only,
+replace the training cue with an independent fair coin with
+probability $\gamma$. The resulting joint cue accuracy is
+\[
+ r(\gamma)=0.03(1-\gamma)+0.5\gamma.
+\]
+The resulting cue remains independent of the task feature
+conditional on the label.
+The population score is representable by the same affine model,
+using the original cue coefficient outside the joint cell and a
+different one inside it. In the joint cell the score follows the
+task feature on every input without ties exactly when its log-odds magnitude
+strictly dominates that of the cue, or $r(\gamma)>0.15$.
+Equivalently, $\gamma>12/47$. At equality some inputs tie.
+Outside the joint cell the population decision still follows the
+original cue and has accuracy $0.97$.
+
+The task-feature decision is minimax for joint accuracy across
+the matched and reversed test laws. Their equally weighted
+mixture makes the cue fair conditional on the label and the
+task feature. The best accuracy on this mixture is $0.85$.
+For any rule, the smaller of its two accuracies is at most its
+accuracy on the mixture. Using the task feature attains $0.85$
+in each law and in the independent-cue test. This argument
+covers randomized decisions as well. Exact enumeration checks
+all sixteen deterministic rules on the two binary inputs.
+
+We reused the eight synthetic seeds and their test cases to
+compare four balancing weights at 60 and 240 epochs. Each
+joint training row allocates weight $1-\gamma$ to its original
+cue and $\gamma/2$ to each replacement cue, holding total
+training weight fixed. The three other cells are unchanged.
+At 240 epochs the correct counts were as follows.
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Joint weight $\gamma$ & Outside joint & Matched & Reversed & Independent \\
+\midrule
+$0$   & 13,962 & 4,681 & 119   & 2,368 \\
+$1/4$ & 13,962 & 4,075 & 4,075 & 4,075 \\
+$1/3$ & 13,962 & 4,075 & 4,075 & 4,075 \\
+$1$   & 13,962 & 4,075 & 4,075 & 4,075 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The unbalanced run reproduces the earlier counts at 60 epochs
+and loses most reversed-cue accuracy with longer training.
+One-quarter balancing appears robust at 240 epochs but is
+below the population threshold. Its fitted robustness in this
+comparison cannot certify the behavior of its objective at the
+population optimum. One-third and full balancing satisfy the
+threshold in the synthetic model. The follow-up uses the
+original test cases and gives no new external test of generalization.
+
+\section{Use during training and release}
+Screen paired cases while tuning the policy, then freeze a distinct
+cohort and checkpoint before making a release claim. Draw the
+targeted joint tests with a seed inaccessible to the acting policy.
+In an authorization-sensitive workflow, useful outcomes include
+acting on permitted requests and asking for clarification when
+authority is ambiguous. Report both along with harms so that a
+checkpoint that simply refuses everything does not appear useful.
+A prospective agent study should compare the verified curricula
+at a common audit cost and hold out entire task families. The
+synthetic study supplies a control with known cue reliability.
+An agent study would need external outcome adjudication and
+validation that both interventions preserve the task and authority.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{dasgupta}
+Tirthankar Dasgupta, Natesh S. Pillai, and Donald B. Rubin.
+\emph{Causal Inference from $2^k$ Factorial Designs Using the
+Potential Outcomes Model}. Journal of the Royal Statistical Society,
+Series B 77(4), 2015. \url{https://arxiv.org/abs/1211.2481}.
+\end{thebibliography}
+\end{document}

@@ -1,0 +1,249 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Separating Consequence and Tone in Preference Feedback}}
+\newtheorem{proposition}{Proposition}
+\title{Separating Consequence and Tone in Preference Feedback}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Human feedback can reward both relief of a
+problem and the feeling of having been heard. We specify a factorial
+feedback design that estimates both contributions and exposes a ranking
+reversal. Two structural models with identical observed training examples
+have different causal effects. The result motivates interventional
+examples during reward-model development and an explicit outcome holdout.
+Three fitted affine scorers illustrate the role of the training target.
+An outcome target chose benefit in all 36 synthetic holdout pairs.
+The pooled rating target chose benefit in twelve and tied in one.
+Two opposite-corner comparisons identify average effects but can
+leave the effect of helping ambiguous at a fixed tone. We derive
+sharp bounds for that effect from the two comparisons. When the
+comparisons are reported as intervals, a graph gives exact effect
+bounds and detects incompatible panels.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} What must a preference study vary to separate
+genuine help from a tone cue?
+\paragraph{Finding.} Opposite-corner comparisons identify average
+effects. The missing factorial interaction can still reverse the
+consequence effect at one tone. Four independently defined cells
+resolve that ambiguity in the rating table. An interval-valued panel
+can sometimes certify the sign using a single extra comparison.
+\paragraph{Evidence and scope.} The bounds are exact and
+checked by enumeration. The training results use synthetic consequence
+labels and supplied features. They characterize those learning targets
+and leave the validity of real outcome labels to separate adjudication.
+
+\section{What a high rating buys}
+A warm dismissal can receive a higher immediate rating than a plain
+answer that solves the problem. Comfort can itself be valuable. The
+development risk is teaching a tone cue to substitute for the sought
+help. Constitutional AI demonstrates a training pipeline using
+critiques, revision and preference feedback \cite{bai}. Reward-gaming
+analysis makes the general proxy problem precise \cite{skalse}. Here
+the intervention changes the example design upstream of that proxy.
+
+Let $h$ be a declared helpful consequence and $t$ a tone treatment,
+both binary. In a synthetic crossed panel take rating $R(h,t)=2h+3t$.
+At fixed tone, helping raises the score by two in both cells. Yet
+$R(0,1)=3>2=R(1,0)$. A scalar fitted perfectly to this rating can
+reproduce that reversal. Crossed grading makes the tradeoff visible
+even when the fit looks excellent.
+
+\section{What two paired comparisons can establish}
+Suppose the assessor keeps only two comparisons. In the first,
+the useful response is warm and the unhelpful one is plain.
+In the second, those tone assignments are reversed. Write
+$R_{ht}\in[0,1]$ for the normalized mean rating, with $h=+$
+denoting the useful response and $t=+$ the warm tone. The
+observed contrasts are
+\[
+ A=R_{++}-R_{--},\qquad B=R_{+-}-R_{-+}.
+\]
+Their half-sum is the average effect of the useful response
+across tones, and their half-difference is the average tone
+effect across consequences. Neither contrast gives a direct
+comparison of consequences at a fixed tone.
+
+\begin{proposition}
+Let $W=2-|A|-|B|$. With only these two contrasts and the unit
+rating range, the sharp interval for the factorial interaction
+$C=R_{++}+R_{--}-R_{+-}-R_{-+}$ is $[-W,W]$.
+The two fixed-tone consequence effects are
+$(A+B+C)/2$ and $(A+B-C)/2$. Each has sharp interval
+\[
+ \left[\frac{A+B-W}{2},\frac{A+B+W}{2}\right].
+\]
+\end{proposition}
+\begin{proof}
+Two numbers in $[0,1]$ whose difference is $A$ can have
+any sum in $[|A|,2-|A|]$. The other pair can independently
+have any sum in $[|B|,2-|B|]$. Taking the difference of
+these sums gives the interaction interval, with both endpoints
+attainable. Expanding each fixed-tone contrast in terms of
+$A,B,C$ yields the claimed effects and endpoints.
+\end{proof}
+
+For example, take $(A,B)=(0.6,0.2)$. The average consequence
+effect is $0.4$, while the fixed-tone effect can be $-0.2$.
+In order $(++,+-,-+,--)$, the table $(0.6,1,0.8,0)$ gives
+effects $-0.2$ and $1$. The table $(0.8,0.6,0.4,0.2)$ gives
+$0.4$ at both tones with the same observed contrasts. Measuring
+one fixed-tone comparison in the same rating population identifies
+the missing interaction. If the claims concern actual user benefit,
+the outcome check still needs independent validation.
+
+Across 17,667 four-cell tables on three rational grids, exact
+enumeration recovered the predicted extrema for every contrast
+pair. This finite check complements the continuous proof and
+does not estimate how often the ambiguity occurs in human feedback.
+
+\section{Combining comparisons reported as intervals}
+Different reviewers may estimate different contrasts. Suppose each
+reported interval bounds the difference of two cells of one declared
+reference population. The intervals must already allow for sampling
+uncertainty and any population differences the audit permits. We
+ask which rating tables remain consistent with all of them.
+
+Include a vertex for each cell and an anchor vertex with score zero.
+For a bound $\ell\le R_i-R_j\le u$, add an edge $j\to i$ of
+weight $u$ and an edge $i\to j$ of weight $-\ell$. Connect the
+anchor to each cell and back with weights one and zero, respectively.
+Write $d(i,j)$ for the shortest path length from $i$ to $j$.
+
+\begin{proposition}
+A common rating table exists exactly when the graph has no negative
+cycle. In that case the sharp interval for $R_a-R_b$ is
+$[-d(a,b),d(b,a)]$.
+\end{proposition}
+\begin{proof}
+Each edge bounds a difference of scores. Adding the constraints
+around a cycle makes its weight nonnegative. Conversely, if there
+is no negative cycle, distances from any one vertex are finite
+because all cells connect to the anchor. The triangle inequality
+makes those distances a feasible set of scores after subtracting
+the anchor distance. Adding the inequalities along any path gives
+the stated interval. Using distances from $b$ attains the upper
+endpoint, and using distances from $a$ attains the lower endpoint.
+The feasible tables form a convex set, so every intermediate
+value is also attained.
+\end{proof}
+
+For example, suppose the diagonals give $A\in[0.55,0.65]$ and
+$B\in[0.15,0.25]$. The warm-tone consequence effect could be as
+low as $-0.30$ or as high as $1$. A third comparison that puts
+the plain-tone effect in $[0.50,0.60]$ narrows the warm-tone
+interval to $[0.10,0.40]$. The sign is now determined even though
+none of the three comparisons is exact. An audit can use this test
+to decide whether paying for a fourth comparison could change the
+sign conclusion under the declared intervals.
+
+There is also a direct inconsistency check. With diagonals $0.60$
+and $0.20$, the two fixed-tone effects must sum to $0.80$.
+Intervals $[0.30,0.50]$ and $[0.70,0.90]$ each fit the rating
+scale but have a combined lower bound of $1$. A cycle detects the
+conflict. The diagnosis is incompatibility under the common-table
+assumption. It cannot identify which panel, uncertainty interval,
+or population assumption failed.
+
+An exhaustive oracle classified 256 finite panels, of which 66
+were incompatible. On the 190 feasible panels it confirmed all
+4,560 lower and upper endpoints across ordered cell pairs. With
+integer-scaled constraints the distance witnesses are integer-scaled
+too, so the grid oracle covers the continuous extrema in these cases.
+
+\section{An observational obstruction}
+\begin{proposition}
+There are two causal models with the same observed distribution of
+action and outcome and different average effects of action.
+\end{proposition}
+\begin{proof}
+Draw $X$ uniformly from $\{0,1\}$ and set $A=X$. In model I let $Y=A$.
+In model II let $Y=X$. Both observational laws put half their mass on
+each of $(0,0)$ and $(1,1)$. Replacing the action equation by $A=a$
+sets $Y=a$ in I and leaves its mean $1/2$ in II. The average effects
+are one and zero, respectively. This uses the structural intervention
+semantics described by Pearl \cite{pearl}.
+\end{proof}
+
+\section{Development protocol}
+Build four matched alternatives per scenario wherever the variation is
+legitimate. Hold intent, privacy and permission constant. Independently
+vary tone and the concrete effect, such as whether a correction
+actually fixes the error. Record the beneficiary's stated goal and an
+outcome check separately from satisfaction. A warm explanation can
+win within the set that meets the task and respects the beneficiary.
+In cases where tone changes uptake, keep the interaction term
+$R(1,1)-R(1,0)-R(0,1)+R(0,0)$ rather than forcing separability.
+
+Compare an ordinary preference reward against a reward with separately
+supervised outcome and tone heads. Freeze scenario families and check
+whether the latter reduces warm-but-unhelpful choices when the two
+signals conflict. Include neutral-but-helpful and harmful-but-popular
+alternatives, with independent outcome adjudication. Train only in
+settings where synthetic or consented outcomes can be checked. Wrong
+outcome labels remain dangerous under either design.
+
+\section{Audit and next measurement}
+The local check enumerated all four rating cells, confirmed contrasts
+$(2,2)$, and evaluated both intervention distributions. The synthetic
+effect magnitudes are a counterexample to identification from passive
+ratings.
+
+A separate training job fitted three affine scorers on the same four
+balanced feature rows from zero initialization. Each used eight exact
+gradient steps of size $1/2$. The feature columns are orthogonal and
+have unit mean square. A closed-form least-squares oracle therefore
+checks each fitted vector as $255/256$ times its optimum. The targets
+were pooled rating, direct helpful outcome, and deliberately reversed
+outcome. The 36 held-out pairs crossed new strength values for both
+features. Each compares a helpful plain action with a warm unhelpful one.
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Training target & Chose help & Tied & Chose warm unhelpful\\
+\midrule
+Pooled rating & 12 & 1 & 23\\
+Direct outcome & 36 & 0 & 0\\
+Reversed outcome & 0 & 0 & 36\\
+\bottomrule
+\end{tabular}
+\end{center}
+The reversed target is the decisive source-validity check. The
+synthetic model learns the goal developers specify, including a
+wrong one. Here legitimate and proxy features are supplied by the
+experimenter. A future model trial needs outcome fidelity and realistic
+crossing. A manipulation that changes the apparent tone and what was
+actually offered must be treated as a different intervention.
+\section{Matched stochastic training study}
+Eight train and holdout seed pairs tested whether the earlier result
+survives noisy supervision. We fitted logistic scores from 320
+balanced-in-expectation feature draws per seed. The pooled labels
+were Bernoulli with logit \(0.9h+2t\), and direct labels had logit
+\(2h\). The two arms used the same inputs, uniforms, optimizer,
+and evaluation pairs. Each new pair compared a helpful colder choice
+with a warm unhelpful choice at unseen feature strengths.
+
+The direct outcome arm chose help on 3,200 of 3,200 pairs, compared
+with 58 for pooled feedback. The paired gain ranged from 94.75 to
+100 percentage points across the eight seeds. This extends the
+deterministic example to noisy labels within the supplied feature
+map. The latent target remains an experimenter definition.
+
+\paragraph{Review status.} Independent manuscript review and a language-model study remain open.
+
+\begin{thebibliography}{9}
+\bibitem{bai} Yuntao Bai et al. \emph{Constitutional AI: Harmlessness from AI Feedback}.
+\url{https://arxiv.org/pdf/2212.08073}.
+\bibitem{skalse} Joar Skalse, Nikolaus H. R. Howe, Dmitrii Krasheninnikov,
+and David Krueger. \emph{Defining and Characterizing Reward Hacking}.
+\url{https://arxiv.org/pdf/2209.13085}.
+\bibitem{pearl} J. Pearl. Causal inference in statistics: An overview.
+\url{https://ftp.cs.ucla.edu/pub/stat_ser/r350.pdf}.
+\end{thebibliography}
+\end{document}

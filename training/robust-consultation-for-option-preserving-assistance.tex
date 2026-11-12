@@ -1,0 +1,362 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Robust Consultation for Option-Preserving Assistance}}
+\newtheorem{proposition}{Proposition}
+\title{Robust Consultation for Option-Preserving Assistance}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Acting immediately can consume an option that a beneficiary would
+have preferred to keep. In a two-stage decision model, preserving
+a menu and learning the beneficiary's state yields a value
+of information with an explicit cost threshold. When both the
+beneficiary's likely preference and the reliability of a reply
+are uncertain, we derive the maximin rule for rectangular uncertainty.
+When the two uncertainties are coupled, mixing immediate assistance
+with consultation can strictly improve the guarantee. A finite
+exact-arithmetic audit checks both settings. For any finite
+joint scenario set, a two-dimensional distance formula gives
+the exact optimal guarantee. For a finite batch, we distinguish a
+hard question quota from its average-rate counterpart. When the
+scenario can respond to the remaining quota, a backward recursion
+prices the loss of one question slot.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} When is it worth asking a beneficiary
+which already permitted option to use?
+\paragraph{Finding.} The value depends on the joint uncertainty
+about preferences and reply quality. Its convex hull gives a
+sharp guarantee, and randomizing between asking and acting can
+improve that guarantee.
+\paragraph{Evidence and scope.} Exact checks cover
+rectangular and coupled models. The fitted comparison uses
+synthetic costs and labels. A reply can inform the choice
+within the authorized menu, and permission is checked separately.
+
+\section{Why keeping an option changes the decision}
+An assistant can offer two possible ways to resolve a problem,
+prepare either one, or commit to one immediately. Suppose permitted
+actions form the same finite menu $\mathcal A$ in each state
+$\theta$. Acting immediately yields
+\[
+ V_0=\max_{a\in\mathcal A}E[u(a,\theta)].
+\]
+If a reversible step preserves the menu and a query perfectly
+reveals $\theta$ before action, the expected value after paying
+query cost $c$ is $V_1=E[\max_a u(a,\theta)]-c$.
+This is a value-of-information comparison in the tradition of
+Blackwell's order \cite{rauh}, with an explicit cost for the more
+informative experiment. An irreversible operation can remove later
+options, so the calculation assumes a preserved menu.
+
+\begin{proposition}
+The reversible and informed route strictly improves expected
+utility exactly when
+$c<E[\max_a u(a,\theta)]-\max_a E[u(a,\theta)]$.
+The right side is nonnegative.
+\end{proposition}
+\begin{proof}
+Subtract $V_0$ from $V_1$. For every fixed action the statewise
+maximum is at least its utility, so expectation dominates the
+best fixed action. Equality holds whenever the same action
+maximizes in every positive-probability state.
+\end{proof}
+
+\section{An exact threshold}
+Take two equally likely states. A tailored choice yields $4$
+and the wrong choice yields $-2$. An immediate commitment gives
+$1$, while perfect information yields $4$ before cost. The
+threshold is $3$. At cost $2$ the reversible route is better,
+and at cost $4$ acting immediately has higher expected utility
+within this toy contract. With a symmetric answer channel of
+accuracy $\rho\geq1/2$, using the indicated option yields
+$6\rho-2$. Its improvement before cost is $6\rho-3$. A
+bare instruction to always ask would lose in several of these
+cases.
+
+\section{When consultation reliability is uncertain}
+Suppose both actions are permitted and exactly one matches the
+beneficiary's state. Normalize the matching and mismatching payoffs
+to one and zero, respectively, and write $d\ge0$ for consultation
+cost in those units. Let $p$ be the probability that option one
+matches. The binary answer is correct with the same probability
+$r$ in either state. A scenario $(p,r)$ is fixed before the policy
+draws any private random coin. The policy knows the uncertainty
+set, and the reply is its only observation after choosing to ask.
+
+The four relevant deterministic payoffs are
+\[
+ p,\qquad 1-p,\qquad r-d,\qquad 1-r-d.
+\]
+They correspond to choosing option one immediately, choosing
+option zero immediately, following the reply, and reversing the
+reply. A policy that pays to ask and then always chooses the same
+option is weakly dominated by its immediate counterpart.
+
+\begin{proposition}
+For an uncertainty rectangle $[\ell,u]\times[r_-,r_+]$, the
+optimal worst-case expected payoff is
+\[
+ \max\bigl\{\ell,1-u,\tfrac12,r_--d,1-r_+-d\bigr\}.
+\]
+\end{proposition}
+\begin{proof}
+The first two values are attained by the immediate options. An
+equal mixture of those options attains $1/2$ in every scenario.
+Following or reversing the reply attains the last two values,
+respectively. For an upper bound choose the admissible scenario
+whose $p$ and $r$ are each closest to $1/2$. At that scenario
+the best immediate payoff is $\max\{\ell,1-u,1/2\}$ and the
+best query payoff is $\max\{r_--d,1-r_+-d,1/2-d\}$. Averaging
+among policies cannot exceed the highest payoff there. Since
+$d\ge0$, the claimed formula follows.
+\end{proof}
+
+The rectangle can be too pessimistic if the weak regimes for
+immediate action and consultation cannot occur together. For
+example, at $d=1/10$ take the two scenarios
+$(p,r)=(19/20,11/20)$ and $(11/20,19/20)$. The best pure
+policy guarantees $11/20$. An equal mixture of immediate
+option one and following the reply gives $7/10$ in both scenarios.
+To certify optimality, give the two scenarios weights $3/8$ and
+$5/8$. Each of those two policies then has mean $7/10$, and
+the other two have smaller means. Every policy's worst-case
+payoff is bounded above by its mean under these weights.
+The enclosing rectangle gives only $11/20$, as it permits
+low values of both $p$ and $r$ at once.
+
+\section{The exact value of a joint scenario set}
+Let $S$ be any finite nonempty set of pairs $(p,r)$ under the
+same symmetric answer and cost assumptions. For a fixed
+policy, its expected payoff is affine in these two coordinates.
+Consequently the worst payoff over $S$ agrees with the worst
+payoff over its convex hull.
+
+\begin{proposition}
+The optimal worst-case expected payoff is
+\[
+\frac12+\min_{(p,r)\in\operatorname{conv}S}
+  \max\left\{\left|p-\frac12\right|,
+              \left|r-\frac12\right|-d,\ 0\right\}.
+\]
+\end{proposition}
+\begin{proof}
+The finite game has four pure policies and the scenarios in
+$S$ as its opposing choices. A randomized policy is a probability
+vector over the four policies. Linear-programming duality
+equates its best worst-case payoff to the smallest best-policy
+payoff under a mixture of scenarios. The mixture is represented
+by its mean pair $(p,r)\in\operatorname{conv}S$ because every
+pure payoff is affine. The maximum of the four pure payoffs
+at that pair is
+$\max\{p,1-p,r-d,1-r-d\}$. Subtracting $1/2$ gives the
+displayed distance expression.
+\end{proof}
+
+Geometrically, expand the rectangle
+$|p-1/2|\le\gamma$, $|r-1/2|\le d+\gamma$
+from $\gamma=0$ until it meets the hull. The first intersection
+gives the guaranteed advantage $\gamma$ over a fair immediate
+choice. Inspecting individual scenarios can miss the least
+favorable mixture in the interior. For example, the triangle
+with vertices $(3/4,1/2),(1/4,3/4),(1/4,1/4)$ contains
+$(1/2,1/2)$ in its interior. At zero query cost the robust
+value is $1/2$, although checking only its three edges gives
+a larger value. On 96 three- and four-scenario fixtures the
+hull calculation agreed with independent enumeration of the
+policy linear program's vertices. Mixed policies strictly
+improved on pure policies in 78 fixtures. The counts concern
+the declared synthetic grid.
+
+In a consent-based workflow, the alternatives could be an
+immediately usable, reversible draft and a draft tailored after a
+short question. Joint measurements of preference prevalence and
+reply reliability can support a scenario set. Use the rectangle
+when the evidence supports only marginal ranges. A stronger
+guarantee for a smaller joint set depends on that set covering
+plausible cases. These policies neither authorize new actions nor
+guarantee the welfare of each beneficiary.
+
+\section{A limit on how often to ask}
+A service may want a guarantee without interrupting every person.
+Let $q\in[0,1]$ bound the probability of asking. This is distinct
+from $d$, the utility cost each time the service asks. On the
+scenario hull write $A(p)=\max(p,1-p)$ for the best immediate
+value and $B(r)=\max(r,1-r)-d$ for the best query value.
+
+\begin{proposition}
+With a question rate at most $q$, the optimal worst-case payoff is
+\[
+ V(q)=\min_{(p,r)\in\operatorname{conv}S}
+ \bigl[A(p)+q\max(0,B(r)-A(p))\bigr].
+\]
+A target $v>V(1)$ is infeasible. For $v\le V(1)$ the smallest
+permitted rate is
+\[
+ \sup_{(p,r)\in\operatorname{conv}S:\ A(p)<v}
+       \frac{v-A(p)}{B(r)-A(p)},
+\]
+with value zero if the set is empty.
+\end{proposition}
+\begin{proof}
+At a fixed scenario mixture, let $x\le q$ be total probability
+assigned to query policies. The best payoff at that $x$ is
+$(1-x)A(p)+xB(r)$, since the two kinds of actions can be chosen
+separately. Its maximum over $x$ is the stated expression.
+The capped policy set is a compact polytope. The same finite-game
+duality as before interchanges maximization over its vertices
+and minimization over the scenario hull. If $A(p)\ge v$, the
+point imposes no lower bound on $q$. Otherwise, feasibility at
+$q=1$ implies $B(r)\ge v>A(p)$, and the expression is at least
+$v$ exactly when $q\ge(v-A(p))/(B(r)-A(p))$. Every point must
+satisfy its inequality, which yields the supremum.
+\end{proof}
+
+The expression in the minimization is the maximum of six affine
+functions. Two represent immediate choices. Four represent asking
+with probability $q$ and choosing one immediate action and one
+reply rule. Thus the computation can use the vertices where
+active affine functions change across the hull. A separate policy
+oracle instead enumerates mixtures of the original four choices
+subject to the explicit rate constraint.
+
+In the earlier pair of scenarios with query cost $1/10$, a
+one-quarter rate gives $5/8$ instead of the unrestricted $7/10$.
+To guarantee $13/20$ requires a rate of one third. A rate above
+one half gives no additional gain in this case. Across 256 exact
+comparisons, the capped hull result agreed with the policy oracle.
+A one-quarter cap strictly reduced the unrestricted value on 14
+of 64 scenario sets.
+
+
+\section{A hard quota for a finite batch}
+Suppose $n$ cases share a quota of $k\le n$ questions. Each case has
+the same authorized menu, cost and scenario set $S$. The objective
+is the sum of case utilities. A scenario is fixed before the policy
+draws its current coins. An oblivious scenario sequence is fixed
+before the batch. A predictable adversary may instead choose each
+scenario after observing the remaining quota. It has no access to
+the policy's future coins. Neither party has a persistent hidden
+state that constrains the future scenario set.
+
+\begin{proposition}
+For oblivious scenarios the optimal per-case guarantee under the
+hard quota is $V(k/n)$. For predictable scenarios let $G(n,k)$
+be the optimal total guarantee, with $G(0,k)=0$,
+$G(n,0)=nV(0)$, and $G(n,k)=G(n,n)$ for $k>n$. Define
+\[
+ U(c)=\min_{(p,r)\in\operatorname{conv}S}
+              \max\{A(p),\max(r,1-r)-c\}.
+\]
+For $n,k\ge1$,
+\[
+ G(n,k)=G(n-1,k)+U\bigl(d+G(n-1,k)-G(n-1,k-1)\bigr).
+\]
+\end{proposition}
+\begin{proof}
+For a fixed sequence, take a rate-capped optimal policy with question
+probability $x\le k/n$. Pick $k$ distinct slots uniformly. For $k>0$,
+ask independently in each eligible slot with probability $nx/k$.
+The conditional action mixtures match the optimal one-case policy
+and each slot has the intended marginal. This delivers $V(k/n)$
+while respecting the quota on every path. With $k=0$, always use
+the immediate mixture. For the converse, draw the scenarios
+independently from a least favorable mixture attaining $V(k/n)$.
+Past observations cannot predict a fresh scenario draw.
+If the expected fraction of questions is $y\le k/n$, the per-case
+payoff under the mixture is at most $(1-y)A+yB$. Its maximum over
+$y\le k/n$ equals $V(k/n)$. Some fixed sequence therefore gives
+at most this value.
+
+In the predictable game, retaining a slot leaves continuation
+$G(n-1,k)$. Spending it leaves $G(n-1,k-1)$. The difference is
+nonnegative by inclusion of feasible policies. Conditional on the
+public history, all future scenarios remain possible. Subtracting
+the common continuation therefore raises the effective question
+cost by that difference. The one-case minimax identity gives $U$
+at the raised cost. Backward induction supplies strategies for
+both players at every quota.
+\end{proof}
+
+For the earlier two-scenario example, put $Z_n\sim\mathrm{Bin}(n,1/2)$.
+The predictable value has the exact form
+\[
+ G(n,k)=\frac{11n}{20}+\frac3{10} E[\min(k,Z_n)].
+\]
+To see this, the expression's marginal value of a slot is
+$(3/10)P(Z_n\ge k)$. For any such continuation charge $\Delta$
+between zero and $3/10$, immediate option one and following the
+reply dominate their counterparts. Their worst-case mixture is
+optimized by asking with probability $1/2$ when a slot remains.
+The two scenario payoffs meet there and the stage value is
+$7/10-\Delta/2$. The recurrence for $E[\min(k,Z_n)]$ under one
+additional fair coin yields the displayed value and the stated
+boundary cases.
+
+With two cases and one question, the oblivious guarantee is $7/10$
+per case. The predictable guarantee is $53/80$. At $k=n/2$ for
+even $n$, the total gap is $(3/20)E|Z_n-n/2|$, so the gap per case
+is at most $3/(40\sqrt n)$. This follows from symmetry and the
+binomial variance. The verifier compared 336 reachable states
+using two exact stage solvers, checked the binomial expression at
+560 states, and checked the two-case saddle against all eight
+scenario trees and twelve pure plans.
+
+A support team with a fixed daily question allowance can randomly
+reserve slots if its case mix is fixed before those choices.
+If requests arrive in response to disclosed capacity, use a
+state-dependent guarantee. Neither calculation changes the
+permission needed to act within an individual case.
+
+\section{Building examples that transfer}
+Generate episodes with identical first messages and different
+beneficiary preferences. Include a reversible preparatory step,
+an immediate commitment, and a short question with an explicit
+delay or attention cost. In independent test families measure
+whether the model retains meaningful control for the affected
+person and whether it delivers helpful work when a question has
+little value. Permission is a separate constraint on the menu,
+including any cost of delay in time-sensitive cases. Collect
+preferences under consent and keep emergency scenarios subject
+to appropriate authority.
+
+\newpage
+\section{Verification and limits}
+The checker compares the statewise formula against explicit
+enumeration of four contingent policies across all two-by-two
+tables over $\{-2,0,4\}$ and five priors. All 405 agree.
+An exact second audit checked the robust value on 270 rectangles
+and compared primal policy mixtures with dual scenario bounds on
+315 scenario-pair and cost combinations. Mixing strictly improved
+on the best pure policy in 118 cases. These counts describe the fixed rational
+grid. The proposal depends on realistic costs and faithful
+preferences. A falsely reversible operation, an answer channel
+with state-dependent error, or an omitted stakeholder can
+invalidate the model.
+\section{Training and testing when to ask}
+The learned logistic policy trained on 320 synthetic examples per
+seed using the rule \(6\rho-3>c\). It chose whether to pay for
+information. Across 3,200 fresh episodes, it queried 1,690 times.
+It achieved mean realized utility 1.512, compared with 1.094 for
+always asking and 0.976 for never asking. All policies shared
+the same realized consultation and immediate-action outcomes
+for each episode. The per-seed improvement over never asking
+ranged from 0.199 to 0.857 utility units. The evaluation depends
+on an available, reversible menu and the simulated accuracy
+and cost distribution. It supplies an empirical check on the
+decision rule in that environment.
+
+\paragraph{Review status.} Independent manuscript review and a language-model study remain open.
+
+\begin{thebibliography}{9}
+\bibitem{rauh} Johannes Rauh, Pradeep Kr.~Banerjee, Eckehard
+Olbrich, J\"urgen Jost, Nils Bertschinger, and David H.~Wolpert.
+Coarse-Graining and the Blackwell Order. \emph{Entropy}
+19(10), 527, 2017. \url{https://arxiv.org/pdf/1701.07602}.
+\end{thebibliography}
+\end{document}

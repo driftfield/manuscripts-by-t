@@ -1,0 +1,357 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Causal Benefit and Policy Risk Under Optional Assistance}}
+\newtheorem{theorem}{Theorem}
+\title{Causal Benefit and Policy Risk Under Optional Assistance}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+\begin{abstract}
+An assistance offer can help people who accept it while harming
+people who would decline. Under one-sided uptake we derive the
+sharp range of outcomes from carrying out the intervention for
+everyone, and use it to bound the downside of an authorized policy
+change. For two voluntary offers we bound the benefit to newly
+induced takers when the offer itself can affect their outcomes.
+A separate result gives the possible shares of people helped and
+harmed, even when average benefit is positive. Exact finite checks
+reproduce the bounds. Applying them requires evidence for the
+direct-effect allowances and separate authorization for each regime.
+An exact allocation then balances worst-case policy regret against
+an overall individual-harm allowance across groups.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} Does a favorable trial of voluntary help justify
+changing which people receive it?
+\paragraph{Finding.} With one-sided uptake, the unobserved outcomes of
+non-takers give a sharp interval for mandatory execution. With two
+voluntary offers, bounded direct effects give a different sharp interval
+for newly induced takers. Its two outcome marginals give a sharp
+joint region for the shares who benefit and who are harmed.
+\paragraph{Evidence and scope.} The bounds are proved and checked
+against exact synthetic oracles. An operator can report benefit
+sensitivity alongside uptake before expanding an offer. The required
+direct-effect bounds and individual consent come from outside the trial.
+
+\section{What a randomized offer identifies}
+A scheduling assistant can offer a change, let a person decline,
+and observe what happens. A positive result for the offer does not
+determine what would happen if the assistant carried out the change
+for everyone. The distinction is consequential when a service uses
+voluntary trial data to change an automated default.
+
+Let $Z$ be a randomized offer, $D(z)$ indicate uptake under offer status $z$, and $Y(d)$ be the outcome under treatment status $d$. Assume no interference, $D(1)\ge D(0)$, and that the offer affects the outcome only through uptake. Always-takers and never-takers contribute zero to the intent-to-treat contrast because their treatment does not change. Compliers contribute $Y(1)-Y(0)$. Thus, for nonzero uptake contrast,
+\[
+\frac{\mathbb E[Y\mid Z=1]-\mathbb E[Y\mid Z=0]}
+     {\mathbb E[D\mid Z=1]-\mathbb E[D\mid Z=0]}
+ =\mathbb E[Y(1)-Y(0)\mid D(1)>D(0)].
+\]
+This is the local average treatment effect of Imbens and
+Angrist \cite{imbens}, in the instrumental-variable framework
+reviewed by Pearl \cite{pearl}. The distinction matters for
+learned assistance policies because data from voluntary users
+may favor an action that other users reject.
+
+\paragraph{A reversal in a finite population.}
+In a finite population of 100 simulated recipients, 30 compliers gain two units and 70 never-takers lose two if treated. The uptake contrast is $0.30$ and the offer's outcome contrast is $0.60$, giving the ratio $2$. Forcing treatment on everyone produces total change $60-140=-80$. Both computations use exact integer or rational arithmetic.
+
+
+\section{What a favorable offer leaves unresolved}
+Consider one-sided uptake, so $D(0)=0$ and $D(1)=1$ for compliers
+only. Let $c$ be the complier share. Outcomes lie in $[0,1]$.
+Write $\mu_{d,C}$ and $\mu_{d,N}$ for mean outcomes under
+treatment $d$ in compliers and never-takers. The offer arm
+identifies $c$, $\mu_{1,C}$, and $\mu_{0,N}$ when the corresponding
+strata have positive mass. The control arm identifies the population
+untreated mean $W$. This in turn identifies $\mu_{0,C}$ for $c>0$.
+The policy that offers assistance has mean
+\[
+O=c\mu_{1,C}+(1-c)\mu_{0,N}.
+\]
+Mandatory execution would yield
+$F=c\mu_{1,C}+(1-c)\mu_{1,N}$, where $\mu_{1,N}$ is unobserved.
+Its sharp interval is therefore
+\[
+[L,U]=[c\mu_{1,C},\ c\mu_{1,C}+1-c].
+\]
+The endpoint worlds set the missing mean to zero or one without
+altering the observed arm distributions. Intermediate means are
+possible by mixing those worlds. The limiting case $c=0$ uses
+$c\mu_{1,C}=0$ and the case $c=1$ collapses the interval.
+This is the one-sided special case of the partial-identification
+problem studied by Balke and Pearl \cite{balke}.
+
+\section{A risk limit on policy experimentation}
+Choose the better of the two identified regimes and denote its mean
+by $S=\max(W,O)$. Consider a policy that uses the mandatory regime
+with probability $\theta$ and the identified regime otherwise,
+where $0\le\theta\le1$. This is an analysis of authorized regime
+choices. A standing refusal or missing authority excludes the
+mandatory regime before numerical optimization.
+
+Suppose $L<S<U$. Define $a=S-L$ and $b=U-S$. The comparator
+knows $F$ and chooses whichever regime has the higher mean.
+For $F\le S$, regret is $\theta(S-F)$ and increases as $F$
+decreases. For $F\ge S$, regret is $(1-\theta)(F-S)$ and
+increases as $F$ increases. The worst-case regret is therefore
+\[
+R(\theta)=\max\{\theta a,(1-\theta)b\}.
+\]
+A separate constraint limits the worst-case expected loss against
+$S$ to $\delta\ge0$, which gives $\theta a\le\delta$.
+The unconstrained minimizer is the intersection of the two linear
+pieces. The objective decreases up to that point and increases
+after it. The constrained optimizer is
+\[
+\theta^*=\min\!\left\{\frac{b}{a+b},\frac{\delta}{a}\right\}.
+\]
+If $L\ge S$ choose the mandatory regime whenever authorized.
+If $U\le S$ choose the identified regime. The formula applies the
+minimax-regret criterion for treatment decisions \cite{manski}
+with an additional downside constraint. It controls an expected
+policy contrast over the modeled population. In particular it
+cannot by itself grant individual permission to act.
+
+\section{Exact evaluation of the decision rule}
+Take $c=2/5$, $\mu_{0,C}=1/5$, $\mu_{1,C}=4/5$, and
+$\mu_{0,N}=3/5$. Offering improves the mean from $11/25$ to
+$17/25$. Mandatory execution can produce any mean in $[8/25,23/25]$.
+Without the additional risk limit, $\theta^*=2/5$. With
+$\delta=1/20$, the feasible optimizer is $5/36$, with worst
+regret $31/150$. If mandatory execution is excluded by consent,
+the authorized policy set uses $\theta=0$ and worst regret
+against the unrestricted oracle is $6/25$.
+
+The checker evaluated 625 parameter settings and five loss caps
+per setting. The closed form attained no greater regret than any
+admissible member of a 17-point grid in all 3,125 cases.
+The risk cap reduced the unconstrained choice in 271 cases.
+Ninety parameter settings had strictly favorable offering and
+an interval for mandatory execution that straddled the offer's
+mean. These are finite design counts. The mathematical derivation
+covers continuous mixtures and the experiment checks its implementation.
+
+\section{Two voluntary offers with direct effects}
+An offer can change distress even when the recipient does not
+accept it. Instead of assuming exact exclusion, compare a weak
+and a strong authorized offer, labeled $z=0,1$. Keep randomized
+assignment, noninterference, and monotone uptake. The three
+uptake strata are stable takers $A$, induced takers $C$, and
+stable non-takers $N$, with shares $a,c,n$. They are identified
+from the two uptake rates, and assume $c>0$. Write $Y_z(d)$
+for a binary outcome under offer $z$ and treatment $d$.
+
+Use population-weighted success masses. Let $A_z$ be the
+success mass for $A$ under $Y_z(1)$ and $N_z$ the mass for $N$
+under $Y_z(0)$. Let $C_{zd}$ be the success mass for $C$ under
+$Y_z(d)$. The weak treated cell identifies $A_0$, and the
+strong untreated cell identifies $N_1$. The other two cells
+identify $h_{11}=A_1+C_{11}$ and $h_{00}=N_0+C_{00}$.
+For example $h_{11}=\Pr(Y=1,D=1\mid Z=1)$.
+
+Supply three sensitivity parameters, in population-mass units:
+\[
+ |A_1-A_0|\le \epsilon_A,\qquad
+ |N_1-N_0|\le \epsilon_N,\qquad
+ |C_{10}-C_{00}|\le \epsilon_C.
+\]
+These are assumptions about direct offer effects at the same
+treatment status. The trial alone does not identify them.
+Define
+\begin{align*}
+ I_A &= [A_0-\epsilon_A,A_0+\epsilon_A]\cap[0,a],\\
+ I_N &= [N_1-\epsilon_N,N_1+\epsilon_N]\cap[0,n],\\
+ I_1 &= (h_{11}-I_A)\cap[0,c],\\
+ I_0 &= (h_{00}-I_N)\cap[0,c],\\
+ J_0 &= (I_0+[-\epsilon_C,\epsilon_C])\cap[0,c].
+\end{align*}
+Here sums and differences range over all points in the intervals.
+
+\begin{theorem}
+If either $I_1$ or $I_0$ is empty, the observed cells are
+incompatible with the stated bounds. Otherwise the sharp
+identified interval for the treatment benefit among induced
+takers under the strong offer is
+\[
+ \mathbb E[Y_1(1)-Y_1(0)\mid C]
+ \ \in\ \frac{1}{c}(I_1-J_0).
+\]
+\end{theorem}
+\begin{proof}
+The strong treated mixture gives $C_{11}=h_{11}-A_1$,
+and the weak untreated mixture gives $C_{00}=h_{00}-N_0$.
+This yields $I_1$ and $I_0$ by the observed totals and the
+direct-effect bounds. The constraint on the untreated induced
+stratum expands $I_0$ to $J_0$. The choices of $C_{11}$
+and $C_{10}$ are independent as feasibility constraints:
+they involve disjoint unknown masses and can be combined
+in one joint potential-outcome law with the specified
+marginals. Thus every pair of points in $I_1$ and $J_0$
+is feasible, including the pairs that attain the endpoints.
+\end{proof}
+
+For a trial with $(a,c,n)=(1/4,1/4,1/2)$, suppose
+$(A_0,h_{11},h_{00},N_1)=(0.15,0.35,0.35,0.25)$.
+The uptake contrast is $1/4$ and the outcome contrast is $0.10$.
+Under exact exclusion their ratio gives benefit $0.40$.
+Allowing same-treatment mean shifts of $0.10$ for $A$ and $N$
+and $0.05$ for untreated $C$ gives benefit in $[0.05,0.75]$.
+Increasing only the allowable mean shift for $N$ to $0.20$
+widens the interval to $[-0.15,0.90]$.
+
+An exact integer-grid audit enumerated latent success counts
+and independently compared both endpoints or infeasibility for
+56,700 observed count and sensitivity settings. It found 4,299
+settings with a positive conventional Wald contrast and a
+strictly sign-ambiguous interval. That count describes the
+declared grid. The sharpness argument works over continuous
+population masses and does not rely on the grid.
+
+\section{A positive mean can conceal individual harm}
+For the strong offer and induced takers, write $[p_-,p_+]=I_1/c$
+for the treated success probability and $[q_-,q_+]=J_0/c$
+for the untreated one. A person benefits when the treated outcome
+is one and the untreated outcome is zero, and is harmed in the
+reverse case. Let $b$ and $h$ be the corresponding population shares
+within the induced stratum. The mean treatment effect is $b-h$.
+It leaves the two shares underdetermined.
+
+\begin{theorem}
+With unrestricted dependence of the two potential outcomes, the
+sharp region for $(b,h)$ is
+\begin{align*}
+ 0\le b &\le \min(p_+,1-q_-),\\
+ 0\le h &\le \min(q_+,1-p_-),\\
+ b+h &\le 1,\\
+ p_--q_+ &\le b-h\le p_+-q_- .
+\end{align*}
+The sharp marginal lower bounds are $\max(0,p_--q_+)$ for $b$
+and $\max(0,q_--p_+)$ for $h$. The first two inequalities give
+their respective sharp upper bounds.
+\end{theorem}
+\begin{proof}
+Let $u$ be the share with both potential outcomes equal to one.
+The four joint masses are $b,h,u,1-b-h-u$. With $b,h\ge0$,
+their nonnegativity and the marginal constraints hold exactly when
+\[
+ [0,1-b-h]\cap[p_--b,p_+-b]\cap[q_--h,q_+-h]
+\]
+is nonempty. Requiring each lower endpoint to be at most each
+upper endpoint gives the displayed inequalities. Any allowed
+$u$ constructs a joint law, which can be coupled with the
+remaining binary potential outcomes to match their feasible
+marginals in the preceding theorem.
+
+For fixed success marginals $p,q$, the smallest and largest
+possible benefit shares are $\max(0,p-q)$ and $\min(p,1-q)$.
+This follows by choosing the largest and smallest feasible
+common-success share $u$, respectively. Minimizing the former
+over the marginal intervals uses $p_-,q_+$. Maximizing the
+latter uses $p_+,q_-$. Interchanging the roles of treatment
+and no treatment proves the harm bounds.
+\end{proof}
+
+In the trial with the narrower direct-effect allowances, the
+induced group's mean treatment effect lies in $[0.05,0.75]$,
+its benefited share in $[0.05,0.85]$ and its harmed share in
+$[0,0.30]$. A joint law with $b=0.35$, $h=0.30$ and $u=0.35$
+matches the observed cells and attains the lowest mean effect.
+The largest benefit and harm bounds cannot occur together
+because their sum would exceed one. Thus an operator with a
+ten-percent ceiling on individual harm cannot certify that
+ceiling from the positive mean alone.
+
+The verifier enumerated joint outcome tables on populations of
+one to eight induced takers. The region and all four coordinate
+extrema matched direct enumeration for 4,916 pairs of marginal
+intervals and 308,846 candidate benefit and harm pairs. Of
+those interval pairs, 560 permit positive harm even though
+every compatible law has positive mean benefit. This is a finite
+algebra check. Trial sampling uncertainty and the direct-effect
+assumptions still need separate analysis in an application.
+
+\section{Allocating authorized help under a harm allowance}
+Suppose a service has pre-decision groups with shares $w_g$ that
+sum to one. For each group, assume justified treatment-effect bounds
+$[\ell_g,u_g]$ and a sharp upper bound $\bar h_g$ on the share of
+people whose outcome would worsen under treatment. For binary
+outcomes, the preceding joint region supplies these quantities.
+Take the joint uncertainty across groups to be the product of
+their admissible laws. Compare treatment with a fixed reference
+under the same offer. Within each group the action is authorized,
+and the service assigns treatment with probability $\theta_g$
+independently of each person's potential outcomes.
+
+Let $a_g=[-\ell_g]_+$ and $b_g=[u_g]_+$, where $[x]_+=\max(x,0)$.
+An oracle that knows the mean effect can choose to treat a whole
+group or leave it at the reference. The worst regret against this
+oracle and the worst share of people harmed are, respectively,
+\[
+ \sum_g w_g\max\{a_g\theta_g,b_g(1-\theta_g)\},
+ \qquad \sum_g w_g\bar h_g\theta_g.
+\]
+For the first expression, consider the extreme group means.
+For the second, independence of assignment gives a harm share
+of $\theta_g h_g$ in each group. Product uncertainty makes both
+bounds sharp. The two suprema can occur in different worlds.
+
+\begin{theorem}
+To minimize worst-case regret subject to an overall harm allowance
+$\eta$, let $x_g=b_g/(a_g+b_g)$ when the denominator is positive,
+and set $x_g=0$ otherwise. Use $\theta_g=x_g$ for groups with
+$\bar h_g=0$. For the others, assign treatment probability up to
+$x_g$ in descending order of $b_g/\bar h_g$, stopping when
+$\sum_g w_g\bar h_g\theta_g=\eta$ or all group limits are reached.
+\end{theorem}
+\begin{proof}
+Moving any $\theta_g>x_g$ down to $x_g$ weakly lowers both the
+regret and its harm cost. On $[0,x_g]$, increasing $\theta_g$
+saves $w_g b_g$ units of regret per unit of probability and costs
+$w_g\bar h_g$ units of the harm allowance. There is no cost when
+$\bar h_g=0$. For positive cost, moving an equal amount of harm
+allowance from a lower-ratio group to a higher-ratio group with
+room left cannot increase regret. Repeating the exchange gives
+the stated allocation, including ties and a partial final group.
+\end{proof}
+
+For two equally sized groups, take treated and untreated success
+intervals $[0.40,0.80]$ and $[0.20,0.40]$ in the first group,
+and $[0.90,0.90]$ and $[0.60,0.80]$ in the second. The upper mean
+improvements are $0.60$ and $0.30$. The maximum harmed shares
+are $0.40$ and $0.10$. At overall allowance $0.08$, serving the
+second group first gives treatment rates $(0.15,1)$ and regret
+$0.255$. Serving the larger upper mean first gives rates $(0.40,0)$
+and regret $0.330$. Both meet the same harm allowance.
+
+The verifier reconstructed 384 group extrema from joint outcome
+tables and matched 640 allocations against a vertex oracle for the
+piecewise-linear objective. In an application, use group bounds
+for the actual authorized population. Principal strata from a trial
+can support a sensitivity analysis, but observed group membership
+needs its own evidence. The overall allowance can be supplemented
+by separate harm ceilings in groups requiring additional protection.
+
+\section{Application and next test}
+Train the policy to distinguish offering, accepting, and executing. During a controlled evaluation of an accessibility assistant, log opt-out friction and downstream outcomes separately. If receiving an offer itself changes distress, exclusion fails and the randomized effect of the offer remains the defensible estimand. Cross-user coordination can also violate noninterference. A follow-up should test a low-friction offer against a matched control and report both uptake and outcome contrasts. A negative offer effect would directly challenge the proposed deployment even with favorable outcomes among acceptors.
+
+\paragraph{Review status.} Independent manuscript review is pending.
+
+\begin{thebibliography}{9}
+\bibitem{pearl} Judea Pearl. \emph{Causal inference in statistics: An overview}. 2009. \url{https://ftp.cs.ucla.edu/pub/stat_ser/r350.pdf}.
+\bibitem{imbens} Guido W. Imbens and Joshua D. Angrist.
+Identification and Estimation of Local Average Treatment Effects.
+\emph{Econometrica} 62(2), 467--475, 1994.
+\url{https://raw.githubusercontent.com/Mixtape-Sessions/Instrumental-Variables/main/Readings/Lecture3/Angrist_Imbens_1994.pdf}.
+\bibitem{balke} Alexander Balke and Judea Pearl.
+\emph{Bounds on Treatment Effects From Studies With Imperfect Compliance}.
+Journal of the American Statistical Association 92(439), 1997.
+\url{https://ftp.cs.ucla.edu/pub/stat_ser/r199-jasa.pdf}.
+\bibitem{manski} Charles F. Manski.
+\emph{Statistical Treatment Rules for Heterogeneous Populations}.
+\emph{Econometrica} 72(4), 1221--1246, 2004.
+\url{https://www.cemmap.ac.uk/wp-content/legacy/resources/files/manski09_5.pdf}.
+\end{thebibliography}
+\end{document}

@@ -1,0 +1,331 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,microtype,hyperref}
+\hypersetup{hidelinks,pdfauthor={T},pdftitle={Certifying Cumulative Harm Across Training Checkpoints}}
+\newtheorem{proposition}{Proposition}
+\title{Certifying Cumulative Harm Across Training Checkpoints}
+\author{T}
+\date{}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A later training stage can erase behavior learned during safety
+tuning. We compute the nearest update satisfying one first-order
+harm constraint, then show why that update alone can still raise
+harm. A curvature term yields a sufficient finite-step condition.
+For repeated updates along a fixed search line, we give the
+sharp cumulative harm interval from a Lipschitz bound and
+interval observations of the directional derivative. An exact
+oracle checks the bounds and distinguishes preserved harm
+allowance from a rule that resets its allowance after each step.
+For checkpoints on a turning path, exact gradients and a global
+smoothness bound give sharp endpoint values through shortest paths.
+A source-aware search can certify a cap when a bounded number of
+intermediate measurements may be faulty.
+\end{abstract}
+
+\section*{Summary and scope}
+\paragraph{Question.} How much can a protected harm score increase across
+a sequence of tentative updates?
+\paragraph{Finding.} On a fixed search line, interval observations of a
+Lipschitz directional derivative give exact endpoints for cumulative
+change. Exact gradient vectors give a separate certificate that can
+link nonadjacent checkpoints. One-sided projection or a renewed
+allowance at every step can miss a breach.
+\paragraph{Evidence and scope.} The interval is proved and
+checked by a lattice oracle. A tuning team can certify each tentative
+release against the same starting value. The guarantee applies to the
+specified surrogate and a certified curvature bound.
+\section{A protected behavioral objective}
+Suppose $H(w)$ is a differentiable harm surrogate on a frozen
+training slice. It might score whether a tool-use policy acts after
+a veto, with the action validator separated from the reward model.
+Let $a=\nabla H(w)\neq0$, and let $g$ be the update proposed by the
+next training objective. Gradient surgery uses projections to
+reduce gradient conflict in multitask learning \cite{pcgrad}.
+Here a designated surrogate defines a one-sided guard for a
+proposed update.
+\begin{proposition}
+The Euclidean-nearest update with $a^\top d\leq0$ is
+\[
+d=g-\frac{\max(0,a^\top g)}{\lVert a\rVert^2}a.
+\]
+If $\nabla H$ is $L$-Lipschitz on the update segment, then
+$H(w+d)\leq H(w)+a^\top d+(L/2)\lVert d\rVert^2$.
+\end{proposition}
+\begin{proof}
+When $g$ is feasible, its distance to itself is zero. Otherwise
+write $g$ and any feasible vector in normal and tangential
+coordinates. The tangential component can match $g$, while the
+closest feasible normal coordinate is zero. The formula follows.
+Integrating $\nabla H(w+td)^\top d$ for $0\leq t\leq1$ and
+bounding its difference from $a^\top d$ by $Lt\lVert d\rVert^2$
+gives the finite-step inequality.
+\end{proof}
+
+\section{Why a projected step can fail}
+Take $H(x,y)=x+y^2$ at $(0,0)$, with $a=(1,0)$ and $g=(1,1)$.
+Projection gives $(0,1)$, which satisfies the linear guard
+with equality. Its harm rises from zero to one. If the permitted
+slack is $m=H_{\max}-H(w)$, a sufficient update condition is
+$a^\top d+(L/2)\lVert d\rVert^2\leq m$. With zero slack and no
+first-order decrease, a finite step cannot be certified by this
+inequality when $L>0$.
+
+\section{A sharp cumulative bound on a fixed search line}
+Let $w(x)=w_0+xv$ with $\lVert v\rVert=1$, and write
+$g(x)=\frac{d}{dx}H(w(x))$. Suppose $g$ is $L$-Lipschitz
+on $[0,T]$ and that certified observations restrict
+$g(x_i)\in[\ell_i,u_i]$ at finitely many nodes, including
+$0$ and $T$. A tentative checkpoint can supply the last
+observation before an update is accepted.
+Define the upper and lower extensions
+\[
+ U(x)=\min_i\{u_i+L|x-x_i|\},\qquad
+ V(x)=\max_i\{\ell_i-L|x-x_i|\}.
+\]
+These are the interval-observation version of the extremal
+McShane--Whitney envelopes for Lipschitz functions
+\cite{petrakis}.
+
+\begin{proposition}
+The observations are feasible if and only if
+$U(x_i)\ge\ell_i$ for every node. When feasible, the sharp
+interval for $H(w(T))-H(w(0))$ is
+\[
+ \left[\int_0^T V(x)\,dx,\ \int_0^T U(x)\,dx\right].
+\]
+\end{proposition}
+\begin{proof}
+Every feasible $g$ lies between $V$ and $U$ by the Lipschitz
+bound. Conversely a finite minimum or maximum of
+$L$-Lipschitz functions is $L$-Lipschitz. At a node,
+$U(x_i)\le u_i$, and the feasibility condition gives the
+other inequality. That condition also states
+$\ell_i\le u_j+L|x_i-x_j|$ for all node pairs. Reversing the
+roles of the indices shows $V(x_i)\le u_i$, while the term
+for node $i$ gives $V(x_i)\ge\ell_i$. Both envelopes are
+admissible derivatives. Integrating each gives a witness
+with the same initial value. Convex combinations of the two
+derivatives attain intermediate changes.
+\end{proof}
+
+Between neighboring nodes at distance $d$, let $a$ and $b$
+be the tightened values of $U$ at the left and right nodes.
+All cones from the left have slope $L$ inside this interval
+and all cones from the right have slope $-L$. Thus the
+upper envelope at distance $t$ from the left is
+$\min\{a+Lt,b+L(d-t)\}$. For $L>0$ its integral is
+\[
+ \frac{d(a+b)}{2}+\frac{Ld^2}{4}-\frac{(b-a)^2}{4L}.
+\]
+The formula follows by splitting the integral at
+$t=(b-a+Ld)/(2L)$, which lies in $[0,d]$ by the Lipschitz
+condition. For $L=0$ the feasible derivative is constant
+between the nodes and the integral is $da$. Apply the same
+upper calculation to $-g$ to get the lower endpoint.
+With zero endpoint derivatives on a segment of length two
+and $L=1$, the allowed increase can still reach one.
+
+Keep the harm cap anchored to the protected reference
+checkpoint. Certify the cumulative increase at every checkpoint
+proposed for release. For example, with $H(w(x))=x$, two
+increments of $3/5$ each fit under a freshly reset allowance
+of one but their cumulative increase is $6/5$. If the search
+turns to a different line, valid per-segment upper bounds can
+be added from the same reference value. The resulting bound
+need not be sharp on a path with changing directions.
+
+\section{Linking checkpoints on a turning path}
+Suppose the full gradients $g_i=\nabla H(x_i)$ are known at
+finitely many checkpoints $x_i$. Assume $L>0$ and that the
+gradient of $H$ is $L$-Lipschitz on the whole parameter space.
+This stronger domain assumption lets the certificate use chords
+between checkpoints as well as the proposed update segments.
+Write $d_{ij}=x_j-x_i$ and set
+\[
+ c_{ij}=\frac12(g_i+g_j)^\top d_{ij}
+ +\frac L4\lVert d_{ij}\rVert^2
+ -\frac1{4L}\lVert g_j-g_i\rVert^2 .
+\]
+
+\begin{proposition}
+The checkpoint gradients can come from a common globally
+$L$-smooth surrogate if and only if the complete directed
+graph with weights $c_{ij}$ has no negative cycle. In that
+case the sharp interval for the change from checkpoint $0$
+to checkpoint $T$ is
+\[
+ \bigl[-\operatorname{dist}(T,0),\ \operatorname{dist}(0,T)\bigr].
+\]
+\end{proposition}
+\begin{proof}
+Let $h_i$ be the unknown checkpoint values. Add the quadratic
+$L\lVert x\rVert^2/2$ to $H$ to obtain a convex function
+$F$ with $2L$-Lipschitz gradient. Conversely, subtracting that
+quadratic from any convex $2L$-smooth function gives an
+$L$-Lipschitz gradient. To see this, for a displacement $d$
+and gradient difference $\Delta G$ of $F$, the smooth convex
+gradient inequality gives
+$\langle \Delta G,d\rangle\ge\lVert\Delta G\rVert^2/(2L)$.
+Expanding $\lVert\Delta G-Ld\rVert^2$ bounds it by
+$L^2\lVert d\rVert^2$.
+
+The smooth convex interpolation theorem of Taylor, Hendrickx,
+and Glineur \cite{taylor} requires
+$F_i\ge F_j+\nabla F_j^\top(x_i-x_j)
+ +\lVert\nabla F_i-\nabla F_j\rVert^2/(4L)$ for every
+ordered pair. Substituting the shifted values and gradients
+reduces this to $h_j-h_i\le c_{ij}$. Thus these difference
+inequalities are necessary and sufficient for interpolation.
+
+Summing around a cycle rules out a negative cycle. Conversely,
+with no negative cycle, distances from any root $r$ give
+feasible values $h_i=\operatorname{dist}(r,i)$ by the
+triangle inequality for shortest paths. Summing along paths
+from $0$ to $T$ bounds the increase above by
+$\operatorname{dist}(0,T)$. The root $r=0$ attains this bound,
+and $r=T$ attains the lower bound. Add a constant to match
+the protected reference value. Interpolating between the
+feasible value vectors gives all intermediate changes.
+\end{proof}
+
+For $L=1$, take $(0,0),(1,0),(0,1)$ in that order, with
+zero gradient at each. The consecutive segment bounds sum to
+$3/4$. The direct edge bounds the sharp increase by $1/4$.
+Gradient consistency also requires more than the pairwise
+Lipschitz check. At the same checkpoints, set the gradients
+to $(0,0),(0,1),(-1,0)$. The two-edge cycles all have
+weight zero, but the reverse triangle has weight $-1$.
+These vectors cannot be gradients of the stipulated surrogate.
+
+On 128 finite fixtures, graph closure agreed with direct
+enumeration of simple paths and cycles. All 64 gradients
+generated from smooth quadratics were feasible, and the
+known values met every certified bound. The 64 unconstrained
+gradient records were rejected. In 32 feasible fixtures the
+graph improved on summing consecutive bounds. This is a
+finite exact check of the graph calculation. It supplies
+no measured global smoothness constant for a real model.
+
+For gradient uncertainty sets, retain the vector $g_i$ as
+a decision variable in each set and keep the original
+difference inequalities. With convex uncertainty sets these
+are convex constraints after moving the squared gradient
+difference to the left side. This gives a finite formulation
+for a sharp bound under the same smoothness model. The
+shortest-path algorithm above assumes the gradients are fixed.
+
+\subsection{A cap that tolerates faulty gradient sources}
+Some intermediate gradient measurements can share a data pipeline.
+Treat each such pipeline as one source and assume that at most
+$k$ sources can be faulty. A faulty source contributes no trusted
+gradients. The endpoint gradients and the global smoothness bound
+remain trusted. We want the increase from $0$ to $T$ to be at most
+$B$ for every admissible choice of faulty sources and every
+surrogate that fits the remaining measurements.
+
+\begin{proposition}
+The following finite search either certifies the cap, finds a
+compatible violation, or establishes that the measurements are
+inconsistent within the fault budget. Begin with no sources removed.
+At an inconsistent node, find a negative cycle and branch on its
+removable sources. At a consistent node, let $P$ be a shortest
+path from $0$ to $T$. If its weight exceeds $B$, report a violation.
+Otherwise branch on the removable sources along $P$. Stop a branch
+when the budget is exhausted or the witness contains no removable
+source. Certify only if at least one consistent retained graph
+was found and there is no violation.
+\end{proposition}
+\begin{proof}
+Deleting a source removes its measurement vertices and leaves
+all other weights unchanged. Any graph extending an inconsistent
+node by further deletions must break the negative cycle before
+it can become consistent. At a consistent node, the distance from
+$0$ to $T$ is attained by a smooth surrogate, so a value above
+$B$ is a valid counterexample. If the distance is at most $B$,
+any graph that keeps the path $P$ still has an upper bound at
+most $B$. A violating extension must therefore remove a source
+on that path. These two witness rules preserve every possible
+counterexample, and each branch consumes one source. If there
+is no consistent node, all possible routes to consistency were
+searched through the negative-cycle branches. This yields the
+separate inconsistency decision.
+\end{proof}
+
+For example, take endpoints $(0,0),(2,0)$, $L=1$, and zero
+measured gradients. Either intermediate checkpoint $(1,1/2)$
+or $(1,-1/2)$ supplies a path with weight $5/8$. With one allowed
+fault and distinct intermediate sources, at least one such path
+survives. With both checkpoints owned by one source, losing that
+source leaves the direct weight $1$, which is attainable. Two
+measurements help only insofar as the fault model separates their
+sources. A consistent full graph alone cannot establish tolerance
+to deletions, since removing observations can increase the distance.
+
+The witness search agreed with exhaustive source-subset enumeration
+on 1,296 finite cap decisions. Of these, 597 were inconsistent,
+353 certified and 346 admitted a violation. These counts describe
+the verifier's grid. For a tuning workflow, record which checkpoint
+measurements share an estimator, data slice or custody path before
+setting the source budget. If the trusted assumptions fail, the
+certificate supplies no basis for accepting the checkpoint.
+
+\section{Integrating the guard into development}
+During capability tuning, estimate protected gradients on a
+declared replay slice and compare an ordinary update, a projected
+update, and a projected update with backtracking. For every
+tentative checkpoint, test the actual protected harm measures
+before accepting it. Keep a separate final split from the repeated
+line search. Log vetoed steps and stop when the objective cannot
+improve within the allowed region. Multiple protected slices
+require a common feasible set rather than a sequence of projections
+assumed to preserve all earlier constraints.
+
+\section{Local check and open test}
+The closed form was checked against every feasible comparison on
+the declared integer grid for 600 nonzero-normal and step pairs.
+The proof establishes the continuous solution. The finite checks
+recomputed 8,800 squared-distance inequalities. For the
+fixed-line extension, a lattice dynamic program independently
+recovered the exact endpoints for 352 compatible interval
+histories and rejected all 160 incompatible ones. It agreed
+on 2,112 harm-cap decisions. The sharp bound admitted 521
+decisions that the left-endpoint-only certificate could not
+admit on this fixed grid. A real model's
+gradient noise and unknown curvature can invalidate a certificate,
+and $H$ can miss harms. A next experiment compares checkpoint
+retention under matched optimization budgets, including a case
+where projection succeeds on replay and fails on a hidden slice.
+\section{Sequential learning and the cost of retention}
+We fitted a shared logistic scorer to a protected sign task,
+then moved to a new task with a conflicting sign direction and a
+free second feature. The protected arm retained at least 70\%
+of the old sign margin and trained only the free direction in the
+second stage. For the old feature support this implies a bound
+on replay logistic loss. The matched unguarded arm updated both
+directions. Across eight seeds and 3,200 held-out cases per task,
+old-task accuracy was 0/3,200 unguarded and 3,200/3,200 protected.
+New-task accuracy was 2,785/3,200 unguarded and 1,579/3,200
+protected. All 288 proposed free-direction steps were accepted.
+This example quantifies a severe retention cost in a deliberately
+conflicting environment. It tests a restricted-direction guard,
+with the earlier projection result governing a separate mechanism.
+
+\paragraph{Review status.} Independent manuscript review and a language-model study remain open.
+
+\begin{thebibliography}{9}
+\bibitem{pcgrad} T. Yu et al. Gradient Surgery for Multi-Task Learning.
+\url{https://arxiv.org/abs/2001.06782}.
+\bibitem{petrakis} Iosif Petrakis. McShane--Whitney
+Extensions in Constructive Analysis. \emph{Logical Methods
+in Computer Science} 16(1), article 18, 2020.
+\url{https://arxiv.org/abs/1804.06757}.
+\bibitem{taylor} Adrien B. Taylor, Julien M. Hendrickx, and
+Fran\c{c}ois Glineur. \emph{Smooth Strongly Convex Interpolation
+and Exact Worst-Case Performance of First-Order Methods}.
+Mathematical Programming 161, 307--345, 2017.
+\url{https://arxiv.org/pdf/1502.05666}.
+\end{thebibliography}
+\end{document}
